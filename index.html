@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.4 (9 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.5 (9 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -126,13 +126,15 @@ h2{font-size:17px;font-weight:700;text-wrap:balance}
 .sheet{position:fixed;inset:0;z-index:30;background:var(--shade);display:flex;align-items:flex-end;justify-content:center}
 .panel{background:var(--bg);width:100%;max-width:560px;max-height:100%;overflow:auto;border-radius:20px 20px 0 0;
   padding:16px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
-.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
 .seg button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:11px;padding:10px 2px;font:600 13px var(--font);cursor:pointer}
 .seg button[aria-pressed="true"]{border-color:transparent;color:#fff}
 .seg button[data-k="Spent"][aria-pressed="true"]{background:var(--out)}
 .seg button[data-k="Received"][aria-pressed="true"]{background:var(--money)}
 .seg button[data-k="Moved"][aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .seg button[data-k="Car"][aria-pressed="true"]{background:var(--car)}
+.seg button[data-k="People"][aria-pressed="true"]{background:var(--cob)}
+.seg button{font-size:12.5px !important;padding:10px 1px !important}
 .field{display:flex;flex-direction:column;gap:6px}
 .field label,.flab{font-size:12.5px;font-weight:600;color:var(--muted)}
 input,select{font:500 16px var(--font);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;width:100%;min-width:0}
@@ -338,12 +340,17 @@ function balances(){
   E.forEach(e=>{ if(e.before) return; const a=+e.amount||0;
     if(e.type==="Spent"){ if(e.from in b) b[e.from]-=a; }
     else if(e.type==="Received"){ if(e.from in b) b[e.from]+=a; }
+    else if(e.type==="Lent"){ if(e.from in b) b[e.from]-=a; }
+    else if(e.type==="Borrowed"){ if(e.from in b) b[e.from]+=a; }
     else if(e.type==="Car" && a<0){ /* taking money out of the fund: the money stays where it is */ }
     else { if(e.from in b) b[e.from]-=a; if(e.to in b) b[e.to]+=a; } });
   return b;
 }
 function carFund(){ return (+S.goal.already||0)+E.filter(e=>e.type==="Car").reduce((s,e)=>s+(+e.amount||0),0); }
 function moneyIHave(b){ const total=Object.values(b).reduce((s,v)=>s+v,0); const g=b[S.goal.account]||0; return total-Math.max(0,Math.min(g,carFund())); }
+function people(){ const P={}; E.forEach(e=>{ if(e.type!=="Lent" && e.type!=="Borrowed") return; const w=(e.who||"").trim()||"Someone", k=w.toLowerCase();
+  P[k]=P[k]||{name:w,net:0}; P[k].net += (e.type==="Lent"?1:-1)*(+e.amount||0); }); return Object.values(P); }
+const ACTS={lend:["I lent money","Lent",1],borrow:["I borrowed money","Borrowed",1],theyPaid:["They paid me back","Lent",-1],iPaid:["I paid them back","Borrowed",-1]};
 function inMonth(k){ return E.filter(e=>ym(e.date)===k); }
 function sumType(list,t){ return list.filter(e=>e.type===t).reduce((s,e)=>s+(+e.amount||0),0); }
 function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim(); }
@@ -413,6 +420,10 @@ function render(){
   app.innerHTML = tab==="month"?viewMonth(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
 }
 function entryRow(e){
+  if(e.type==="Lent"||e.type==="Borrowed"){ const a=+e.amount||0, w=e.who||"Someone", out=(e.type==="Lent")===(a>0);
+    const what=e.type==="Lent"?(a>0?"Lent to "+w:w+" paid you back"):(a>0?"Borrowed from "+w:"Paid back "+w);
+    const sub=[shortDate(e.date),(out?"from ":"into ")+wallet(e.from||""),e.note||""].filter(Boolean).join(" · ");
+    return `<button class="item" data-edit="${esc(e.id)}"><span class="dot d-mv" aria-hidden="true">${out?"↗":"↙"}</span><span class="txt"><span class="t1">${esc(what)}</span><span class="t2">${esc(sub)}</span></span><span class="amt num c-mv">${out?"−":"+"}${rs(Math.abs(a))}</span></button>`; }
   const cls={Spent:"c-out",Received:"c-in",Moved:"c-mv",Car:"c-car"}[e.type];
   const dot={Spent:["d-out","−"],Received:["d-in","+"],Moved:["d-mv","⇄"],Car:["d-car","★"]}[e.type];
   const what = e.type==="Spent" ? (e.cat||"Other") : e.type==="Received" ? (e.note||"Money in") : e.type==="Moved" ? "Moved" : "Saved for "+(S.goal.name||"goal").toLowerCase();
@@ -460,6 +471,10 @@ function viewHome(){
     <div class="card soft-out"><p class="lab">Out this month</p><p class="val num c-out">${rs(sumType(mon,"Spent"))}</p></div>
   </div>
   ${S.bills.length?`<section class="card" data-tab="month" style="cursor:pointer"><div class="row"><span><span class="lab" style="display:block;color:var(--ink);font-size:15px">Bills this month</span>${unpaid.length?`<span class="small muted">${unpaidSum?rs(unpaidSum):""}${unpaidVar?(unpaidSum?" + ":"")+"bills that change":""}</span>`:""}</span>${unpaid.length?`<span class="pill p-due">${unpaid.length} to pay</span>`:`<span class="pill p-ok">All paid</span>`}</div></section>`:""}
+  ${(()=>{ const P=people().filter(x=>Math.abs(x.net)>=0.5); if(!P.length) return "";
+    const owed=P.filter(x=>x.net>0).reduce((s,x)=>s+x.net,0), owe=P.filter(x=>x.net<0).reduce((s,x)=>s-x.net,0);
+    return `<section class="card" style="padding-block:10px 4px"><div class="row"><span><span class="lab" style="display:block;color:var(--ink);font-size:15px">People</span><span class="small muted">${owed?"They owe you "+rs(owed):""}${owed&&owe?" · ":""}${owe?"You owe "+rs(owe):""}</span></span><button class="linkbtn" data-add="People">+ Add</button></div>
+    <div class="list">${P.map(x=>`<div class="item" style="cursor:default"><span class="dot d-mv" aria-hidden="true">${x.net>0?"↗":"↙"}</span><span class="txt"><span class="t1">${x.net>0?esc(x.name)+" owes you":"You owe "+esc(x.name)}</span><span class="t2">${rs(Math.abs(x.net))}</span></span><button class="paybtn" data-payback="${esc(x.name)}">Paid back</button></div>`).join("")}</div></section>`; })()}
   <div class="secthead"><h2>Recent</h2>${E.length>8?`<button class="linkbtn" data-tab="month">See this month</button>`:""}</div>
   <section class="card" style="padding-block:4px">${E.length?`<div class="list">${sorted(E).slice(0,8).map(entryRow).join("")}</div>`:`<p class="empty">Nothing added yet. Tap Spent or Received above to add your first entry.</p>`}</section>
   <p class="note">Tap any entry to change or delete it.</p>
@@ -561,10 +576,13 @@ function viewSettings(){
     <p class="note">${PHONE?`Your money is saved on this phone only. Save a backup to iCloud Drive (Files) once a month. If you change phones, open the app there and tap Restore. Last backup: <b>${lastBackup()?esc(shortDate(lastBackup())+" "+lastBackup().slice(0,4)):"never"}</b>.`:`A backup file holds all your entries and settings. Use it to move your money to the phone app, or to keep a copy.`}</p>
     <button class="ghost" id="dlb">Download backup file</button>
     ${PHONE?`<label class="ghost" style="text-align:center;cursor:pointer">Restore from a backup file<input type="file" id="rsf" accept=".json,application/json" hidden></label>`:""}
+    ${PHONE?`<p class="flab" style="margin-top:6px">Daily safety copies (automatic)</p><p class="note">Every day, the app keeps a copy of your money on this phone, for the last 7 days. Use one if you delete or change something by mistake.</p>
+    ${snapKeys().length?`<div class="list">${snapKeys().map(k=>{ let n=0; try{ n=(JSON.parse(localStorage.getItem(k)).entries||[]).length; }catch(e){} return `<div class="item" style="cursor:default"><span class="txt"><span class="t1">${esc(shortDate(k.slice(8))+" "+k.slice(8,12))}</span><span class="t2">${n} entries</span></span><button class="paybtn" data-snap="${esc(k)}">Restore</button></div>`; }).join("")}</div>`:`<p class="note">The first copy is made today.</p>`}`:""}
   </section>
   <details class="card sect help" data-sec="help" ${openSecs.has("help")?"open":""}><summary>How to use My Money</summary><div class="sectbody"><ul style="margin:0;padding-left:18px">
     <li><b>Add an entry:</b> tap the big <b>+</b>. Pick Spent, Received, Moved or ${esc(S.goal.name||"Goal")}, type the amount, tap Save.</li>
     <li><b>Spent</b> is money that left you. <b>Received</b> is money that came in. <b>Moved</b> is between your own accounts, like an ATM withdrawal.</li>
+    <li><b>People:</b> money you lent or borrowed. It changes your balance but isn't counted as spending or income. Tap <b>Paid back</b> when it's returned.</li>
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
     <li><b>Bills:</b> tap Mark paid, or pick the bill when you add a Spent.</li>
@@ -634,6 +652,14 @@ async function setupAction(a){
   try{ await profileRef.set(P); setup={step:0}; tab="home"; toast("All set. Tap + to add your first entry."); }
   catch(x){ err.textContent=writeError(x); }
 }
+function snapKeys(){ try{ return Object.keys(localStorage).filter(x=>x.startsWith("mm.snap.")).sort().reverse(); }catch(e){ return []; } }
+function dailySnap(){ if(!PHONE || !ready.profile || !ready.entries || !E.length) return;
+  try{ const k="mm.snap."+todayStr(); if(!localStorage.getItem(k)) localStorage.setItem(k, JSON.stringify({app:"my-money",v:1,exported:new Date().toISOString(),profile:S,entries:E}));
+    const ks=snapKeys(); ks.slice(7).forEach(x=>localStorage.removeItem(x)); }catch(e){} }
+async function restoreSnap(key){ let o=null; try{ o=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}
+  if(!o){ toast("That copy couldn't be read."); return; }
+  if(!confirm("Go back to your money as it was on "+shortDate(key.slice(8))+"? Entries added after that will be removed.")) return;
+  try{ await window.__restore(o); toast("Restored the copy from "+shortDate(key.slice(8))); setTimeout(render,60); }catch(x){ toast(writeError(x)); } }
 function lastBackup(){ try{ return localStorage.getItem("mm.lastBackup")||""; }catch(e){ return ""; } }
 async function downloadBackup(){
   if(!downloads){ toast("Downloads aren't available here."); return; }
@@ -656,6 +682,8 @@ function catSel(id,v){ return `<select id="${id}"><option value="">Any</option>$
 /* ---------- add / edit sheet ---------- */
 function openSheet(kind, entry){
   const e = entry ? clone(entry) : {type:kind, date:todayStr(), amount:"", cat:"", from:"", to:"", note:""};
+  if(e.type==="Lent"||e.type==="Borrowed"){ const a=+e.amount||0; e.act=e.type==="Lent"?(a>0?"lend":"theyPaid"):(a>0?"borrow":"iPaid"); e.amount=String(Math.abs(a)); e.type="People"; }
+  if(e.type==="People" && !e.act) e.act="lend";
   sheet = {editing: !!entry, id: entry && entry.id, e, confirmDel:false};
   drawSheet();
 }
@@ -663,32 +691,42 @@ function drawSheet(){
   const host=document.getElementById("sheetHost");
   if(!sheet){ host.innerHTML=""; return; }
   const e=sheet.e, t=e.type, names=acctNames();
-  const fromLabel={Spent:"Paid from",Received:"Received in",Moved:"From",Car:"From"}[t];
-  const defFrom={Spent:S.defaults.spent,Received:S.defaults.received,Moved:"",Car:S.defaults.saveFrom}[t];
+  const pOut=t==="People" && (e.act==="lend"||e.act==="iPaid");
+  const fromLabel={Spent:"Paid from",Received:"Received in",Moved:"From",Car:"From",People:pOut?"From my":"Into my"}[t];
+  const defFrom={Spent:S.defaults.spent,Received:S.defaults.received,Moved:"",Car:S.defaults.saveFrom,People:S.defaults.spent}[t];
   const curFrom=e.from||defFrom;
   const curTo=t==="Car"?(e.to||S.goal.account):e.to;
   host.innerHTML=`<div class="sheet" id="sheetBg"><div class="panel" role="dialog" aria-modal="true" aria-label="${sheet.editing?"Change entry":"Add entry"}">
     <div class="row"><h2>${sheet.editing?"Change entry":"Add"}</h2><button class="linkbtn" id="closeSheet">Close</button></div>
-    <div class="seg" role="group" aria-label="What happened">${["Spent","Received","Moved","Car"].map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===t}">${k==="Car"?esc(S.goal.name||"Goal"):k}</button>`).join("")}</div>
+    <div class="seg" role="group" aria-label="What happened">${["Spent","Received","Moved","Car","People"].map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===t}">${k==="Car"?esc(S.goal.name||"Goal"):k}</button>`).join("")}</div>
+    ${t==="People"?`<div class="field"><span class="flab">What happened</span><div class="chips">${Object.entries(ACTS).map(([k,v])=>`<button type="button" class="chip" data-act="${k}" aria-pressed="${e.act===k}">${v[0]}</button>`).join("")}</div></div>
+    <div class="field"><label for="who">Who</label><input id="who" autocomplete="off" placeholder="Name, like Ali" value="${esc(e.who||"")}">${people().length?`<div class="chips" style="margin-top:6px">${people().map(x=>`<button type="button" class="chip" data-who="${esc(x.name)}" aria-pressed="${(e.who||"").toLowerCase()===x.name.toLowerCase()}">${esc(x.name)}</button>`).join("")}</div>`:""}</div>`:""}
     <div class="field"><label for="amt">Amount (Rs)</label><input id="amt" class="amount num" inputmode="decimal" autocomplete="off" placeholder="500" value="${esc(e.amount)}"><p class="err" id="amtErr"></p></div>
     ${t==="Spent"?`<div class="field"><span class="flab">Category</span><div class="chips" id="catChips">${catOrder().map(c=>`<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="${c===(e.cat||"")}">${esc(c)}</button>`).join("")}</div></div>`:""}
     ${t==="Spent" && e.cat && billsForCat(e.cat).length?`<div class="field"><span class="flab">Which bill is this? (optional)</span><div class="chips">${billsForCat(e.cat).map(b=>`<button type="button" class="chip" data-bill="${esc(b.name)}" aria-pressed="${e.bill===b.name}">${esc(b.name)}</button>`).join("")}<button type="button" class="chip" data-bill="-" aria-pressed="${e.bill==="-"}">Not a bill</button></div></div>`:""}
     <div class="field"><span class="flab">${fromLabel}</span><div class="chips">${names.filter(n=>t==="Car"?n!==S.goal.account:true).map(n=>`<button type="button" class="chip" data-from="${esc(n)}" aria-pressed="${n===curFrom}">${esc(wallet(n))}</button>`).join("")}</div></div>
     ${t==="Moved"||t==="Car"?`<div class="field"><span class="flab">To</span><div class="chips">${names.map(n=>`<button type="button" class="chip" data-to="${esc(n)}" aria-pressed="${n===curTo}">${esc(wallet(n))}</button>`).join("")}</div></div>`:""}
-    <div class="field"><label for="note">${t==="Received"?"From who / what":"Note (optional)"}</label><input id="note" autocomplete="off" placeholder="${t==="Received"?"Mark, logo project":t==="Spent"?"electricity":"atm"}" value="${esc(e.note)}"></div>
+    <div class="field"><label for="note">${t==="Received"?"From who / what":"Note (optional)"}</label><input id="note" autocomplete="off" placeholder="${t==="Received"?"Mark, logo project":t==="Spent"?"electricity":t==="People"?"what it was for":"atm"}" value="${esc(e.note)}"></div>
     <div class="field"><label for="date">Date</label><input type="date" id="date" value="${esc(e.date)}"></div>
     <button class="primary" id="saveBtn">${sheet.editing?"Save changes":"Save"}</button>
     ${sheet.editing?`<button class="ghost danger" id="delBtn">${sheet.confirmDel?"Tap again to delete":"Delete entry"}</button>`:""}
   </div></div>`;
   if(!sheet.editing) setTimeout(()=>{ const a=document.getElementById("amt"); if(a && !a.value) a.focus(); },60);
 }
-function readSheetInputs(){ if(!sheet) return; const a=document.getElementById("amt"), n=document.getElementById("note"), d=document.getElementById("date");
+function readSheetInputs(){ if(!sheet) return; const a=document.getElementById("amt"), n=document.getElementById("note"), d=document.getElementById("date"), w=document.getElementById("who"); if(w) sheet.e.who=w.value;
   if(a) sheet.e.amount=a.value; if(n) sheet.e.note=n.value; if(d) sheet.e.date=d.value||todayStr(); }
 async function saveSheet(){
   readSheetInputs(); const e=sheet.e, t=e.type, err=document.getElementById("amtErr");
   const amt=parseAmount(e.amount);
   if(!isFinite(amt) || amt===0 || (t!=="Car" && amt<0)){ err.textContent="Type the amount, like 500 or 2k"; return; }
-  const from = e.from || ({Spent:S.defaults.spent,Received:S.defaults.received,Car:S.defaults.saveFrom}[t]||"");
+  const from = e.from || ({Spent:S.defaults.spent,Received:S.defaults.received,Car:S.defaults.saveFrom,People:S.defaults.spent}[t]||"");
+  if(t==="People"){ const who=String(e.who||"").trim(); if(!who){ err.textContent="Type the person's name"; return; }
+    const [lab,typ,sg]=ACTS[e.act||"lend"];
+    const pdoc={type:typ, amount:sg*amt, who, date:e.date||todayStr(), cat:"", bill:"", from, to:"", note:String(e.note||"").trim(), before:false, created: sheet.editing?(e.created||Date.now()):Date.now()};
+    const btn=document.getElementById("saveBtn"); btn.disabled=true; btn.textContent="Saving…";
+    try{ if(sheet.editing) await entriesCol.doc(sheet.id).set(pdoc); else await entriesCol.doc().set(pdoc); sheet=null; drawSheet(); toast({lend:"Saved: lent "+rs(amt)+" to "+who, borrow:"Saved: borrowed "+rs(amt)+" from "+who, theyPaid:"Saved: "+who+" paid back "+rs(amt), iPaid:"Saved: you paid back "+rs(amt)+" to "+who}[e.act||"lend"]); }
+    catch(x){ btn.disabled=false; btn.textContent="Save"; err.textContent=writeError(x); }
+    return; }
   const to = t==="Car" ? (e.to||S.goal.account) : t==="Moved" ? e.to : "";
   if(t==="Moved" && (!from||!to)){ err.textContent="Pick both From and To"; return; }
   if((t==="Moved"||(t==="Car" && amt>0)) && from===to){ err.textContent="From and To can't be the same account"; return; }
@@ -751,7 +789,7 @@ async function downloadExcel(){
     catch(x){ toast("Excel tool didn't load. Check your internet."); return; } }
   if(!downloads){ toast("Downloads aren't available here."); return; }
   const wb=XLSX.utils.book_new();
-  const rows=sorted(E).reverse().map(e=>({Date:e.date, "What happened":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():e.type, Amount:+e.amount, Category:e.cat||"", From:e.from||"", To:e.to||"", Note:e.note||"", Bill:e.bill&&e.bill!=="-"?e.bill:"", "Before tracking":e.before?"Yes":""}));
+  const rows=sorted(E).reverse().map(e=>({Date:e.date, "What happened":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():e.type==="Lent"?(e.amount>0?"Lent":"Paid back to me"):e.type==="Borrowed"?(e.amount>0?"Borrowed":"I paid back"):e.type, Amount:Math.abs(+e.amount), Person:e.who||"", Category:e.cat||"", From:e.from||"", To:e.to||"", Note:e.note||"", Bill:e.bill&&e.bill!=="-"?e.bill:"", "Before tracking":e.before?"Yes":""}));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Entries");
   const months=[...new Set(E.map(e=>ym(e.date)))].sort().map(k=>{ const m=inMonth(k); const i=sumType(m,"Received"), o=sumType(m,"Spent"), s=sumType(m,"Car"); return {Month:monthName(k), "Money in":i, "Money out":o, "Saved for goal":s, "In - out - saved":i-o-s}; });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(months), "Months");
@@ -769,9 +807,14 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
   if(t.id==="sheetBg"){ if(ev.target===t){ sheet=null; drawSheet(); } return; }
+  if(t.dataset.snap){ restoreSnap(t.dataset.snap); return; }
+  if(t.dataset.act){ readSheetInputs(); sheet.e.act=t.dataset.act; drawSheet(); return; }
+  if(t.dataset.who!==undefined){ readSheetInputs(); sheet.e.who=t.dataset.who; drawSheet(); return; }
+  if(t.dataset.payback!==undefined){ const x=people().find(p=>p.name===t.dataset.payback); if(!x) return;
+    sheet={editing:false,id:null,confirmDel:false,e:{type:"People",act:x.net>0?"theyPaid":"iPaid",who:x.name,amount:String(Math.abs(Math.round(x.net*100)/100)),date:todayStr(),from:"",to:"",note:""}}; drawSheet(); return; }
   if(t.dataset.setup){ setupAction(t.dataset.setup); return; }
   if(t.dataset.opencat!==undefined){ openCat = openCat===t.dataset.opencat ? "" : t.dataset.opencat; render(); return; }
   if(t.dataset.bill!==undefined){ readSheetInputs(); sheet.e.bill = sheet.e.bill===t.dataset.bill ? "" : t.dataset.bill; drawSheet(); return; }
@@ -827,11 +870,11 @@ render();
     S.defaults = Object.assign(clone(DEFAULTS.defaults), S.defaults||{});
     S.goal = Object.assign(clone(DEFAULTS.goal), S.goal||{});
     S.limits = S.limits||{}; S.bills = S.bills||[]; S.categories = (S.categories&&S.categories.length)?S.categories:clone(DEFAULTS.categories);
-    ready.profile = true; if(!document.getElementById("setForm")) render();
+    ready.profile = true; dailySnap(); if(!document.getElementById("setForm")) render();
   }, ()=>{ ready.profile=true; render(); });
   entriesCol.onSnapshot(qs=>{
     E = qs.docs.map(x=>Object.assign({id:x.id}, x.data()));
-    ready.entries = true; if(!document.getElementById("setForm")) render();
+    ready.entries = true; dailySnap(); if(!document.getElementById("setForm")) render();
   }, ()=>{ ready.entries=true; render(); });
 })();
 })();
