@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.5 (9 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.6 (9 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -458,7 +458,7 @@ function viewHome(){
 
 
   ${PHONE && !standalone() ?`<section class="card" style="background:var(--mv-soft)"><b>Put My Money on your home screen</b><p class="small" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
-  ${PHONE && E.length && (!lastBackup() || (new Date(todayStr())-new Date(lastBackup()))/864e5>=30)?`<button class="card warnbox" data-tab="settings" style="text-align:left;font:inherit;cursor:pointer"><b>Time for a backup</b><p>${lastBackup()?"Your last backup was on "+esc(shortDate(lastBackup()))+".":"You haven't saved a backup yet."} Tap here, then Download backup file, and save it to iCloud Drive.</p></button>`:""}
+
   <button class="goaltile" data-tab="car" aria-label="${esc(S.goal.name)} fund"><span class="n"><span>${esc(S.goal.name||"Goal")} fund · ${esc(S.goal.account)}</span><span>${pct.toFixed(1)}% of ${lac(price)}</span></span><span class="amt num">${rs(cf)}</span><span class="grownote">${esc(growNote(pct))}</span>${treeSVG(pct)}</button>
   <div class="acts">
     <button class="act" data-add="Spent"><span class="dot d-out" aria-hidden="true">−</span>Spent</button>
