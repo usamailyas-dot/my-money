@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.3 (9 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.4 (9 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -53,24 +53,24 @@
 <style>
 /* Layout: one phone column, sticky month-free header, fixed bottom tabs, full-screen add sheet. */
 :root{
-  --bg:#F3F1FB; --surface:#FFFFFF; --ink:#17152B; --muted:#6C6888; --line:#ECE9F6;
-  --money:#159E6E; --money-soft:#D6F5E9; --out:#E0452F; --out-soft:#FFE1DC;
-  --car:#7B5CF0; --car-soft:#ECE4FF; --warn:#8A5500; --warn-soft:#FFE7B8;
-  --chip:#EEEBF8; --mv-soft:#E1E4FF; --shade:rgba(23,21,43,.45); --tabbar:#17152B; --lift:0 10px 24px rgba(40,30,120,.16);
-  --cob:#3346F0; --mango:#FFB21E; --lilac:#9478FA; --coral:#FF6B57; --mint:#1FAF7E; --pinkc:#F2589C;
+  --bg:#EEF4F4; --surface:#FFFFFF; --ink:#0E1E26; --muted:#5D6E74; --line:#DDE8E8;
+  --money:#13805A; --money-soft:#D8F1E4; --out:#C6432C; --out-soft:#FBE3DC;
+  --car:#0D7A5E; --car-soft:#DDF1EA; --warn:#8A5A00; --warn-soft:#FBEBC4;
+  --chip:#E4EEEE; --mv-soft:#DCEAF2; --shade:rgba(14,30,38,.45); --tabbar:#0E1E26; --lift:0 10px 24px rgba(10,60,80,.16);
+  --cob:#0A5F8A; --mango:#D9A21B; --lilac:#0F8A6A; --coral:#E0607E; --mint:#5B8DD9; --pinkc:#C6432C;
   --font:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:20px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#13111E; --surface:#1E1B2E; --ink:#F1EFFA; --muted:#A7A3C4; --line:#2C2840;
-  --money:#4FD6A2; --money-soft:#16352B; --out:#FF8A73; --out-soft:#3D1F1A;
-  --car:#B9A3FF; --car-soft:#2A2350; --warn:#FFC960; --warn-soft:#3A2C10;
-  --chip:#2A2640; --mv-soft:#232A55; --shade:rgba(0,0,0,.6); --tabbar:#0B0A14; --lift:0 10px 24px rgba(0,0,0,.4); color-scheme:dark}}
+  --bg:#0C1619; --surface:#15232A; --ink:#E8F1F1; --muted:#9DB0B3; --line:#23363C;
+  --money:#4FD6A2; --money-soft:#123327; --out:#FF8A73; --out-soft:#3B1F1A;
+  --car:#4FD1A8; --car-soft:#12352C; --warn:#F2C35A; --warn-soft:#3A2D0E;
+  --chip:#1F3138; --mv-soft:#15334A; --shade:rgba(0,0,0,.6); --tabbar:#071014; --lift:0 10px 24px rgba(0,0,0,.45); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#13111E; --surface:#1E1B2E; --ink:#F1EFFA; --muted:#A7A3C4; --line:#2C2840;
-  --money:#4FD6A2; --money-soft:#16352B; --out:#FF8A73; --out-soft:#3D1F1A;
-  --car:#B9A3FF; --car-soft:#2A2350; --warn:#FFC960; --warn-soft:#3A2C10;
-  --chip:#2A2640; --mv-soft:#232A55; --shade:rgba(0,0,0,.6); --tabbar:#0B0A14; --lift:0 10px 24px rgba(0,0,0,.4); color-scheme:dark}
+  --bg:#0C1619; --surface:#15232A; --ink:#E8F1F1; --muted:#9DB0B3; --line:#23363C;
+  --money:#4FD6A2; --money-soft:#123327; --out:#FF8A73; --out-soft:#3B1F1A;
+  --car:#4FD1A8; --car-soft:#12352C; --warn:#F2C35A; --warn-soft:#3A2D0E;
+  --chip:#1F3138; --mv-soft:#15334A; --shade:rgba(0,0,0,.6); --tabbar:#071014; --lift:0 10px 24px rgba(0,0,0,.45); color-scheme:dark}
 *{box-sizing:border-box}
 html,body{overflow-x:hidden;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;-webkit-tap-highlight-color:transparent}
 body{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -159,10 +159,35 @@ input,select{font:500 16px var(--font);color:var(--ink);background:var(--surface
 @media (prefers-reduced-motion: no-preference){.panel{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 
 /* ---- Wallet Cards look ---- */
+.skyhero{position:relative;margin:-18px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:18px max(16px,env(safe-area-inset-left,0px)) 64px;color:#fff;overflow:hidden;min-height:350px}
+.skyhero .skybg{position:absolute;inset:0;z-index:0}
+.skyhero .skyart{position:absolute;left:0;right:0;bottom:0;width:100%;height:170px;z-index:0}
+.skyhero>*:not(.skybg):not(.skyart){position:relative;z-index:1}
+.skyhero .when{font-weight:500;opacity:.88;font-size:15px}
+.gpanel{margin-top:12px;padding:18px;border-radius:28px;background:rgba(8,30,45,.24);border:1px solid rgba(255,255,255,.26);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 12px 30px rgba(0,0,0,.16)}
+.gpanel .big{font-size:48px;font-weight:800;letter-spacing:-.035em;line-height:1.05;color:#fff}
+.gchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.gchips span{background:rgba(255,255,255,.18);border-radius:99px;padding:7px 12px;font-weight:600;font-size:13.5px}
+.gpanel .sub{font-size:12.5px;opacity:.85;margin-top:8px}
+.homesheet{position:relative;z-index:2;margin:-46px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:18px max(16px,env(safe-area-inset-left,0px)) 0;background:var(--bg);border-radius:30px 30px 0 0;display:flex;flex-direction:column;gap:14px}
+.goaltile{position:relative;overflow:hidden;min-height:136px;width:100%;border:0;border-radius:26px;padding:15px 16px;color:#fff;background:linear-gradient(145deg,var(--lilac),#12A07B);box-shadow:var(--lift);text-align:left;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.goaltile .n{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:14px;opacity:.95}
+.goaltile .amt{font-size:28px;font-weight:800;letter-spacing:-.02em}
+
+.tree{position:absolute;right:4px;bottom:0;width:150px;height:112px;pointer-events:none}
+.carhero{position:relative;overflow:hidden;min-height:190px}
+.carhero .tree{width:190px;height:142px}
+.grownote{font-size:12.5px;opacity:.92;max-width:58%;line-height:1.35}
+.mhead{border-radius:26px;padding:14px;color:#fff;position:relative;overflow:hidden;box-shadow:var(--lift)}
+.mhead .mrow{display:flex;justify-content:space-between;align-items:center;text-align:center;position:relative;z-index:1}
+.mhead button{width:42px;height:40px;border-radius:13px;border:0;background:rgba(255,255,255,.22);color:#fff;font:700 20px var(--font);cursor:pointer}
+.mhead .mt{font-size:20px;font-weight:800;color:#fff}.mhead .ms{font-size:13px;opacity:.9}
+.mhead .deco{position:absolute;inset:0;pointer-events:none;opacity:.55}
+
 .tabs .in{grid-template-columns:repeat(5,1fr)}
 .tabs:has(.in:empty){display:none}
 .tab.plus{padding:0;background:none !important;justify-content:center}
-.tab.plus span{width:50px;height:50px;border-radius:16px;background:var(--cob);color:#fff;display:grid;place-items:center;font:700 30px/1 var(--font);box-shadow:0 6px 16px rgba(51,70,240,.4)}
+.tab.plus span{width:50px;height:50px;border-radius:16px;background:var(--cob);color:#fff;display:grid;place-items:center;font:700 30px/1 var(--font);box-shadow:0 6px 16px rgba(10,95,138,.35)}
 .sect{padding:0}
 .sect summary{list-style:none;cursor:pointer;padding:15px 16px;font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sect summary::-webkit-details-marker{display:none}
@@ -266,9 +291,45 @@ async function hashPin(pin){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 function acctNames(){ return S.accounts.map(a=>a.name).filter(Boolean); }
+function treeSVG(pct){
+  const p=Math.max(0,Math.min(100,pct)), done=p>=100;
+  const ground='<path d="M0 98 Q75 88 150 98 L150 112 L0 112Z" fill="rgba(255,255,255,.22)"/>';
+  if(p<5){ return `<svg class="tree" viewBox="0 0 150 112" aria-hidden="true">${ground}<path d="M75 98 C75 90 75 84 76 78" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M76 82 C65 80 61 72 62 68 C71 68 76 74 76 82Z" fill="#fff" opacity=".95"/><path d="M76 78 C85 74 91 68 92 63 C83 63 77 70 76 78Z" fill="#fff" opacity=".8"/></svg>`; }
+  const h=18+p*0.62, top=98-h, r=8+p*0.26;
+  const blobs=[[0,0,1],[-.75,.35,.75],[.75,.35,.75],[-.4,-.55,.7],[.45,-.5,.7]].slice(0, p<25?2:p<60?4:5)
+    .map(([dx,dy,k])=>`<circle cx="${75+dx*r}" cy="${top+dy*r}" r="${r*k}" fill="#fff" opacity="${.78+k*.2}"/>`).join("");
+  const fruit=done?[[-.5,.1],[.4,.3],[.1,-.45],[-.2,.55]].map(([dx,dy])=>`<circle cx="${75+dx*r}" cy="${top+dy*r}" r="${Math.max(3,r*.13)}" fill="#E0607E"/>`).join(""):"";
+  return `<svg class="tree" viewBox="0 0 150 112" aria-hidden="true">${ground}<path d="M75 98 L75 ${top+4}" stroke="#fff" stroke-width="${3+p*0.05}" stroke-linecap="round" opacity=".95"/>${blobs}${fruit}</svg>`;
+}
+function growNote(p){ return p>=100?"Your tree is fully grown. The goal is reached!":p<5?"Your plant is a sprout. It grows every time you save.":p<25?"Your sapling is growing. Keep saving.":p<60?"A young tree now. More than a quarter of the way.":"A big tree. You're nearly there."; }
+const SEASONS={winter:["Winter","linear-gradient(135deg,#2F5F95,#7FB3D5)"],spring:["Spring","linear-gradient(135deg,#C2577F,#F0A6C2)"],summer:["Summer","linear-gradient(135deg,#C98A10,#F2C94C)"],autumn:["Autumn","linear-gradient(135deg,#B5532A,#E39B3B)"]};
+function seasonOf(k){ const m=+k.slice(5,7); return m===12||m<=2?"winter":m<=4?"spring":m<=8?"summer":"autumn"; }
+function seasonDeco(se){
+  if(se==="autumn") return '<svg class="deco" viewBox="0 0 360 80" preserveAspectRatio="xMaxYMax slice"><path d="M300 62c6-14 18-16 22-14-2 8-12 16-22 14z" fill="#FFD27A"/><path d="M330 22c8-6 18-4 20-1-5 6-14 8-20 1z" fill="#FFB25A"/><path d="M20 66c4-9 12-10 15-9-1 6-9 11-15 9z" fill="#FFE0A0"/></svg>';
+  if(se==="spring") return '<svg class="deco" viewBox="0 0 360 80" preserveAspectRatio="xMaxYMax slice">'+[[310,20],[335,55],[30,60],[292,62]].map(([x,y])=>`<g transform="translate(${x},${y})">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-5" rx="3.2" ry="5" fill="#fff" transform="rotate(${a})"/>`).join("")}<circle r="2" fill="#FFD27A"/></g>`).join("")+'</svg>';
+  if(se==="summer") return '<svg class="deco" viewBox="0 0 360 80" preserveAspectRatio="xMaxYMax slice"><circle cx="330" cy="18" r="16" fill="#FFF3B0"/><g stroke="#FFF3B0" stroke-width="3" stroke-linecap="round">'+[0,45,90,135,180,225,270,315].map(a=>`<line x1="${330+24*Math.cos(a*Math.PI/180)}" y1="${18+24*Math.sin(a*Math.PI/180)}" x2="${330+31*Math.cos(a*Math.PI/180)}" y2="${18+31*Math.sin(a*Math.PI/180)}"/>`).join("")+'</g></svg>';
+  return '<svg class="deco" viewBox="0 0 360 80" preserveAspectRatio="xMaxYMax slice">'+[[300,20],[330,50],[345,15],[25,58],[315,66]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3" fill="#fff"/>`).join("")+'</svg>';
+}
+function skyNow(){
+  const d=new Date(), h=d.getHours()+d.getMinutes()/60;
+  const P={morning:["morning","linear-gradient(180deg,#5C7FB8 0%,#C98FAE 45%,#F2B98E 80%,#F8D7A4 100%)","#0A5F8A","#0F8A6A"],
+    day:["","linear-gradient(180deg,#2F86C4 0%,#5FAEDD 55%,#A9D8EE 100%)","#0A5F8A","#0F8A6A"],
+    evening:["evening","linear-gradient(180deg,#24315E 0%,#5E4C8E 38%,#D9787A 72%,#F3B07C 100%)","#0A5F8A","#0F8A6A"],
+    night:["night","linear-gradient(180deg,#081230 0%,#14234D 55%,#223769 100%)","#0B3F5C","#0B5A47"]};
+  const key=h>=5&&h<8?"morning":h>=8&&h<16.5?"day":h>=16.5&&h<19.5?"evening":"night";
+  let body="";
+  if(key==="night"){ const stars=[[40,30],[90,60],[150,22],[210,48],[260,18],[330,40],[300,80],[120,95],[60,110],[360,100]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i%3?1.2:1.8}" fill="#fff" opacity="${i%2?.6:.9}"/>`).join("");
+    body=stars+'<circle cx="320" cy="120" r="20" fill="#F4F1DA"/><circle cx="329" cy="113" r="18" fill="#14234D"/>'; }
+  else { const t=key==="morning"?(h-5)/3:key==="day"?(h-8)/8.5:(h-16.5)/3; const x=key==="day"?60+t*270:key==="morning"?250+t*60:300-t*40, y=key==="day"?95-Math.sin(t*Math.PI)*60:key==="morning"?175-t*50:120+t*60;
+    body=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${key==="day"?24:30}" fill="${key==="day"?"#FFF1B8":"#FFD7A0"}" opacity=".95"/>`; }
+  const art=`<svg class="skyart" viewBox="0 0 390 170" preserveAspectRatio="none" aria-hidden="true"><g transform="translate(0,-60)">${body}</g>
+    <path d="M0 110 L60 72 L120 96 L190 44 L260 92 L320 66 L390 86 L390 170 L0 170Z" fill="${P[key][2]}" opacity=".88"/>
+    <path d="M0 140 Q110 108 210 130 T390 122 L390 170 L0 170Z" fill="${P[key][3]}"/></svg>`;
+  return {label:P[key][0], bg:P[key][1], art};
+}
 function lac(n){ return n>=100000 ? (Math.round(n/10000)/10).toString().replace(/\.0$/,"")+" lac" : rs(n); }
 const CARDC=[["var(--cob)","#fff"],["var(--mango)","#2A1A00"],["var(--coral)","#fff"],["var(--mint)","#fff"],["var(--pinkc)","#fff"]];
-const CATC=["#3346F0","#FFB21E","#9478FA","#1FAF7E","#FF6B57","#F2589C","#22A6D8","#8A6CFF","#E3A000","#5BBF3A"];
+const CATC=["#0A5F8A","#D9A21B","#0F8A6A","#E0607E","#5B8DD9","#C6432C","#7A9E3B","#8C5BC7","#E38B2C","#2BA3A0"];
 function wallet(name){ return name.toLowerCase()==="cash" ? "Wallet" : name; }
 
 /* ---------- money maths ---------- */
@@ -375,21 +436,19 @@ function viewHome(){
   if(cf>0 && gb < cf-0.5) warns.push(`${esc(S.goal.account)} has ${rs(gb)}, but your ${esc((S.goal.name||"goal").toLowerCase())} fund is ${rs(cf)}. ${rs(cf-gb)} of ${esc((S.goal.name||"goal").toLowerCase())} money was used. If you took it out on purpose, add a ${esc(S.goal.name||"goal")} entry with a minus amount, like -${Math.round(cf-gb)}.`);
   Object.entries(b).forEach(([n,v])=>{ if(v< -0.5) warns.push(`${esc(wallet(n))} is below zero (${rs(v)}). An entry may be missing or in the wrong account. You can also fix it in Settings with a correction.`); });
   return `
-  <div class="row"><h1>${esc(new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))}</h1></div>
+  ${(()=>{ const sk=skyNow(); return `<section class="skyhero" aria-label="Money I have"><div class="skybg" style="background:${sk.bg}"></div>${sk.art}
+    <p class="when">${esc(new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))}${sk.label?" · "+sk.label:""}</p>
+    <div class="gpanel"><p style="font-weight:600;opacity:.92">Money I have</p><p class="big num">${rs(have)}</p>
+      <div class="gchips">${daily.map(a=>`<span>${esc(wallet(a.name))} <b class="num">${rs(b[a.name]).replace("Rs ","")}</b></span>`).join("")}</div>
+      <p class="sub">${goalExtra>0?rs(goalExtra)+" extra in "+esc(S.goal.account)+" counted too. ":""}The ${esc((S.goal.name||"goal").toLowerCase())} fund is kept separate.</p></div>
+  </section>`; })()}
+  <div class="homesheet">
   ${warns.map(w=>`<div class="card warnbox" role="alert"><b>Check this</b><p>${w}</p></div>`).join("")}
 
 
   ${PHONE && !standalone() ?`<section class="card" style="background:var(--mv-soft)"><b>Put My Money on your home screen</b><p class="small" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
   ${PHONE && E.length && (!lastBackup() || (new Date(todayStr())-new Date(lastBackup()))/864e5>=30)?`<button class="card warnbox" data-tab="settings" style="text-align:left;font:inherit;cursor:pointer"><b>Time for a backup</b><p>${lastBackup()?"Your last backup was on "+esc(shortDate(lastBackup()))+".":"You haven't saved a backup yet."} Tap here, then Download backup file, and save it to iCloud Drive.</p></button>`:""}
-  <section class="money-top" aria-label="Money I have">
-    <p class="lab2">Money I have</p>
-    <p class="big num">${rs(have)}</p>
-    <p class="small muted" style="margin-top:4px">${daily.map(a=>wallet(a.name)).join(" + ")}${goalExtra>0?" + "+rs(goalExtra)+" extra in "+esc(S.goal.account):""}. The ${esc((S.goal.name||"goal").toLowerCase())} fund is kept separate.</p>
-  </section>
-  <div class="stack" style="height:${daily.length*62+136}px">
-    ${daily.map((a,i)=>{ const c=CARDC[i%CARDC.length]; return `<div class="wcard" style="top:${i*62}px;height:150px;background:${c[0]};color:${c[1]}"><div class="n"><span>${esc(wallet(a.name))}</span><b class="num">${rs(b[a.name])}</b></div></div>`; }).join("")}
-    <button class="wcard" data-tab="car" style="top:${daily.length*62}px;height:136px;background:var(--lilac)" aria-label="${esc(S.goal.name)} fund"><span class="n"><span>${esc(S.goal.name||"Goal")} fund · ${esc(S.goal.account)}</span><span>${pct.toFixed(1)}% of ${lac(price)}</span></span><span class="amt num">${rs(cf)}</span><span class="prog"><i style="width:${Math.max(pct,1.5)}%"></i></span></button>
-  </div>
+  <button class="goaltile" data-tab="car" aria-label="${esc(S.goal.name)} fund"><span class="n"><span>${esc(S.goal.name||"Goal")} fund · ${esc(S.goal.account)}</span><span>${pct.toFixed(1)}% of ${lac(price)}</span></span><span class="amt num">${rs(cf)}</span><span class="grownote">${esc(growNote(pct))}</span>${treeSVG(pct)}</button>
   <div class="acts">
     <button class="act" data-add="Spent"><span class="dot d-out" aria-hidden="true">−</span>Spent</button>
     <button class="act" data-add="Received"><span class="dot d-in" aria-hidden="true">+</span>Received</button>
@@ -403,7 +462,8 @@ function viewHome(){
   ${S.bills.length?`<section class="card" data-tab="month" style="cursor:pointer"><div class="row"><span><span class="lab" style="display:block;color:var(--ink);font-size:15px">Bills this month</span>${unpaid.length?`<span class="small muted">${unpaidSum?rs(unpaidSum):""}${unpaidVar?(unpaidSum?" + ":"")+"bills that change":""}</span>`:""}</span>${unpaid.length?`<span class="pill p-due">${unpaid.length} to pay</span>`:`<span class="pill p-ok">All paid</span>`}</div></section>`:""}
   <div class="secthead"><h2>Recent</h2>${E.length>8?`<button class="linkbtn" data-tab="month">See this month</button>`:""}</div>
   <section class="card" style="padding-block:4px">${E.length?`<div class="list">${sorted(E).slice(0,8).map(entryRow).join("")}</div>`:`<p class="empty">Nothing added yet. Tap Spent or Received above to add your first entry.</p>`}</section>
-  <p class="note">Tap any entry to change or delete it.</p>`;
+  <p class="note">Tap any entry to change or delete it.</p>
+  </div>`;
 }
 function viewMonth(){
   const k=monthKey, mon=inMonth(k), out=sumType(mon,"Spent"), inn=sumType(mon,"Received"), sv=sumType(mon,"Car");
@@ -412,7 +472,7 @@ function viewMonth(){
   const bills=S.bills.map(x=>[x,billStatus(x,k)]);
   const left=bills.filter(([x,s])=>s.state!=="paid"), still=left.reduce((s,[x])=>s+billAmt(x),0), stillVar=varies(left);
   return `
-  <div class="month-nav"><button data-mon="-1" aria-label="Previous month">‹</button><h2>${monthName(k)}</h2><button data-mon="1" aria-label="Next month">›</button></div>
+  ${(()=>{ const se=seasonOf(k); return `<div class="mhead month-nav" style="background:${SEASONS[se][1]}">${seasonDeco(se)}<div class="mrow"><button data-mon="-1" aria-label="Previous month">‹</button><div><h2 class="mt">${monthName(k)}</h2><p class="ms">${SEASONS[se][0]}</p></div><button data-mon="1" aria-label="Next month">›</button></div></div>`; })()}
   <div class="grid2">
     <div class="card soft-in"><p class="lab">Money in</p><p class="val num c-in">${rs(inn)}</p></div>
     <div class="card soft-out"><p class="lab">Money out</p><p class="val num c-out">${rs(out)}</p></div>
@@ -442,8 +502,9 @@ function viewCar(){
   return `
   <section class="card hero carhero"><p class="lab">${esc(S.goal.name||"Goal")} fund · kept in ${esc(S.goal.account)}</p>
     <p class="big num" style="color:var(--car)">${rs(cf)}</p>
-    <div class="bar" style="margin-top:10px"><i style="width:${Math.max(pct,1)}%"></i></div>
-    <div class="row small" style="margin-top:8px"><span class="muted">${pct.toFixed(1)}% of ${rs(price)}</span><span>Still needed <b class="num">${rs(need)}</b></span></div>
+    <p class="grownote" style="margin-top:4px">${esc(growNote(pct))}</p>
+    <div class="row small" style="margin-top:44px;position:relative;z-index:1;max-width:60%;flex-direction:column;align-items:flex-start;gap:2px"><span class="muted">${pct.toFixed(1)}% of ${rs(price)}</span><span>Still needed <b class="num">${rs(need)}</b></span></div>
+    ${treeSVG(pct)}
   </section>
   <button class="act" data-add="Car" style="justify-content:center;flex-direction:row;font-size:15px;padding:12px"><span class="dot d-car" aria-hidden="true">★</span>Add to the ${esc((S.goal.name||"goal").toLowerCase())} fund</button>
   <h2>When can I buy it?</h2>
