@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.17 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.18 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -378,6 +378,9 @@ body{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px
 .srpanel{min-height:100%;border-radius:0;padding-top:max(14px,env(safe-area-inset-top,0px))}
 .srpanel .search{flex:1}
 .srpanel .row{gap:12px}
+html,body,button,a,input,select,textarea,.wc,.item,svg{touch-action:manipulation}
+.mhead .mrow{gap:6px}
+.gbtn svg path{fill:none}
 .glab{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:6px 4px -4px}
 .backbtn{align-self:flex-start;padding:4px 0;font-size:17px}
 .eyebtn{width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
