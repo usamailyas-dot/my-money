@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.19 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.20 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -415,6 +415,31 @@ html,body,button,a,input,select,textarea,.wc,.item,svg{touch-action:manipulation
 .pamt{text-align:right;font-weight:500;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pamt span{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .paybtn{background:var(--bg);border:0;color:var(--ink);font-weight:600;font-size:13px;padding:7px 12px}
+.lockw{min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 30px;text-align:center;cursor:default}
+.lockw .lk{width:76px;height:76px;color:var(--car)}
+.lockw .lt{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.lockw .ls{color:var(--muted);font-size:15px}
+.lockw .fid{width:120px;height:120px;display:grid;place-items:center;margin-top:26px;background:none;border:0;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0}
+.lockw .fid svg{width:56px;height:56px}
+.lockw .err:empty{display:none}
+.lockw .lnk{margin-top:34px;background:none;border:0;color:var(--car);font:500 16px var(--font);cursor:pointer;padding:8px}
+.lockw form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.lockw form+.lnk{margin-top:12px}
+.lopts{display:flex;flex-direction:column}
+.lopt{display:flex;justify-content:space-between;align-items:center;padding:13px 0;font:400 16px var(--font);color:var(--ink);background:none;border:0;text-align:left;cursor:pointer;width:100%}
+.lopt+.lopt{border-top:.5px solid var(--line)}
+.lopt .tick{color:var(--car);font-weight:700}
+.item[data-edit]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.hm{position:fixed;inset:0;z-index:60;background:rgba(242,242,247,.35);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);animation:hmIn .15s ease-out}
+.hm .hrow{position:fixed;margin:0;padding:0 14px;background:var(--surface);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.18);transform:scale(1.03);border:0;pointer-events:none}
+.hm .hmenu{position:fixed;width:250px;background:rgba(255,255,255,.96);border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.hm .hmenu button{display:flex;justify-content:space-between;align-items:center;width:100%;height:46px;padding:0 16px;background:none;border:0;font:400 17px var(--font);color:var(--ink);cursor:pointer;text-align:left}
+.hm .hmenu button+button{border-top:.5px solid var(--line)}
+.hm .hmenu button.red{color:#E5484D}
+.hm .hmenu svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@keyframes hmIn{from{opacity:0}to{opacity:1}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hm{background:rgba(0,0,0,.45)}:root:not([data-theme="light"]) .hm .hmenu{background:rgba(44,44,46,.96)}}
+:root[data-theme="dark"] .hm{background:rgba(0,0,0,.45)}:root[data-theme="dark"] .hm .hmenu{background:rgba(44,44,46,.96)}
 </style>
 
 <div class="wrap" id="app">
@@ -445,6 +470,7 @@ let searchQ = "", showAmt = false; /* balances start hidden every time the app o
 let frontCard = ""; try{ frontCard=localStorage.getItem("mm.card")||""; }catch(e){}
 let tab = "home", monthKey = ym(todayStr()), sheet = null, unlocked = "", openCat = "";
 try { unlocked = sessionStorage.getItem("mm.unlock") || ""; } catch (e) {}
+let lockPin = false; /* lock screen shows the PIN box instead of Face ID */
 try { const t = localStorage.getItem("mm.tab"); if (t) tab = t; } catch (e) {}
 
 /* ---------- helpers ---------- */
@@ -479,10 +505,25 @@ async function faceUnlock(){
   const id=faceId(); if(!id||!canFace()) return;
   const err=document.getElementById("pinErr");
   try{ const a=await navigator.credentials.get({publicKey:{challenge:rnd(32), rpId:location.hostname, allowCredentials:[{type:"public-key",id:unb64(id)}], userVerification:"required", timeout:60000}});
-    if(a && a.response && (a.response.authenticatorData||a.response.signature)){ unlocked=S.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} render(); return; }
+    if(a && a.response && (a.response.authenticatorData||a.response.signature)){ unlocked=S.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} afterUnlock(); return; }
     throw 0; }
   catch(x){ if(err) err.textContent="Face ID didn't work. Try again or type your PIN."; }
 }
+/* ---------- auto-lock: "0" immediately, "60" / "300" seconds away, "close" only when the app is closed ---------- */
+function lockAfter(){ try{ const v=localStorage.getItem("mm.lockAfter"); return v==null?"0":v; }catch(e){ return "0"; } }
+function lockNow(){
+  try{ if(sheet) readSheetInputs(); }catch(e){}
+  closeHold(); unlocked=""; lockPin=false; limitSheet=null; try{ sessionStorage.removeItem("mm.unlock"); }catch(e){}
+  document.getElementById("sheetHost").innerHTML=""; document.getElementById("toastHost").innerHTML=""; render();
+}
+function afterUnlock(){ render(); if(voice) drawVoice(); else if(sheet) drawSheet(); }
+document.addEventListener("visibilitychange",()=>{
+  if(!S.pinHash || unlocked!==S.pinHash) return;
+  const a=lockAfter(); if(a==="close") return;
+  if(document.hidden){ if(a==="0"){ lockNow(); return; } try{ sessionStorage.setItem("mm.away",String(Date.now())); }catch(e){} return; }
+  let t=0; try{ t=+sessionStorage.getItem("mm.away")||0; sessionStorage.removeItem("mm.away"); }catch(e){}
+  if(t && Date.now()-t >= (+a)*1000) lockNow();
+});
 async function hashPin(pin){
   if(!(window.crypto && crypto.subtle)) return "plain:"+pin;
   const buf=await crypto.subtle.digest("SHA-256", new TextEncoder().encode("my-money:"+pin));
@@ -849,12 +890,18 @@ function render(){
   if(PHONE && fresh && !E.length){ document.getElementById("tabs").innerHTML=""; app.innerHTML=viewSetup(); return; }
   if(S.pinHash && unlocked!==S.pinHash){
     document.getElementById("tabs").innerHTML="";
-    app.innerHTML=`<form id="lockForm" class="card hero" style="display:flex;flex-direction:column;gap:12px;margin-top:10vh">
-      <p class="lab">Kifaya is locked</p>
-      ${faceId()&&canFace()?`<button type="button" class="primary" id="faceBtn" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1M15 9v1M12 9v4h-1M9 16c1.7 1.2 4.3 1.2 6 0"/></svg>Unlock with Face ID</button><p class="small muted" style="text-align:center">or type your PIN</p>`:`<h2>Enter your PIN</h2>`}
-      <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" class="amount num" aria-label="PIN" placeholder="••••">
-      <p class="err" id="pinErr"></p><button class="primary" type="submit">Unlock</button></form>`;
-    if(!(faceId()&&canFace())) setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
+    const face=faceId()&&canFace();
+    const KAF=`<svg class="lk" viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg>`;
+    const FID=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1M15 9v1M12 9v4h-1M9 16c1.7 1.2 4.3 1.2 6 0"/></svg>`;
+    app.innerHTML = face && !lockPin
+      ? `<div class="lockw" id="lockArea">${KAF}<p class="lt">Kifaya is locked</p><p class="ls">Tap to unlock with Face ID</p>
+         <button type="button" class="fid" id="faceBtn" aria-label="Unlock with Face ID">${FID}</button><p class="err" id="pinErr"></p>
+         <button type="button" class="lnk" id="usePin">Use PIN instead</button></div>`
+      : `<div class="lockw">${KAF}<p class="lt">Kifaya is locked</p><p class="ls">Enter your PIN</p>
+         <form id="lockForm"><input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" class="amount num" aria-label="PIN" placeholder="••••">
+         <p class="err" id="pinErr"></p><button class="primary" type="submit">Unlock</button></form>
+         ${face?`<button type="button" class="lnk" id="useFace">Use Face ID instead</button>`:""}</div>`;
+    if(!face || lockPin) setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
     return;
   }
   app.innerHTML = tab==="month"?viewMonth(): tab==="people"?viewPeople(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
@@ -1113,7 +1160,10 @@ function viewSettings(){
     ${sec("lock","PIN lock",s.pinHash?"On":"Off",`
     <div class="setrow"><span class="small">${s.pinHash?"PIN is on. New PIN (leave empty to keep)":"PIN (4 to 8 numbers, optional)"}</span><input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${s.pinHash?"••••":"none"}"></div>
     ${s.pinHash?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinOff" style="width:auto"> Turn the PIN off</label>`:""}
-    ${s.pinHash&&canFace()?(faceId()?`<div class="setrow"><span class="small">Face ID is on for this phone. Your PIN still works as a backup.</span><button type="button" class="ghost" id="faceOff">Turn off Face ID</button></div>`:`<button type="button" class="ghost" id="faceOn">Use Face ID to unlock</button><p class="note">Face ID stays on this phone. Your PIN still works as a backup.</p>`):""}`)}
+    ${s.pinHash&&canFace()?(faceId()?`<div class="setrow"><span class="small">Face ID is on for this phone. Your PIN still works as a backup.</span><button type="button" class="ghost" id="faceOff">Turn off Face ID</button></div>`:`<button type="button" class="ghost" id="faceOn">Use Face ID to unlock</button><p class="note">Face ID stays on this phone. Your PIN still works as a backup.</p>`):""}
+    ${s.pinHash?`<p class="small" style="font-weight:600;margin-top:6px">Lock the app</p>
+    <div class="lopts">${[["0","Immediately"],["60","After 1 minute"],["300","After 5 minutes"],["close","Only when I close it"]].map(([v,l])=>`<button type="button" class="lopt" data-lockafter="${v}"><span>${l}</span><span class="tick">${lockAfter()===v?"✓":""}</span></button>`).join("")}</div>
+    <p class="note">"Immediately" works like WhatsApp: every time you leave Kifaya, it locks. When you come back, ${faceId()?"tap once and Face ID opens it":"type your PIN"}.</p>`:""}`)}
     <p class="err" id="setErr"></p>
     <button class="primary" type="submit">Save settings</button>
   </form>
@@ -1277,7 +1327,7 @@ function drawSheet(){
     ${t==="Spent"||t==="Received"?`<button type="button" class="chip passchip" data-pass="1" aria-pressed="${!!e.pass}">${e.pass?"✓ ":""}Not my money (just passing through)</button>${e.pass?`<p class="note" style="margin-top:-6px">Changes your ${esc(wallet(e.from||({Spent:S.defaults.spent,Received:S.defaults.received}[t])))} balance, but isn't counted as your income or spending.</p>`:""}`:""}
     <div class="field"><label for="date">Date</label><input type="date" id="date" value="${esc(e.date)}"></div>
     <button class="primary" id="saveBtn">${sheet.editing?"Save changes":"Save"}</button>
-    ${sheet.editing?`<button class="ghost danger" id="delBtn">${sheet.confirmDel?"Tap again to delete":"Delete entry"}</button>`:""}
+    ${sheet.editing?`<button class="ghost danger" id="delBtn">Delete</button>`:""}
   </div></div>`;
   if(!sheet.editing) setTimeout(()=>{ const a=document.getElementById("amt"); if(a && !a.value) a.focus(); },60);
   const am=document.getElementById("amt"), fe=document.getElementById("fee");
@@ -1314,8 +1364,7 @@ async function saveSheet(){
   }catch(x){ btn.disabled=false; btn.textContent="Save"; err.textContent=writeError(x); }
 }
 async function deleteEntry(){
-  if(!sheet.confirmDel){ sheet.confirmDel=true; readSheetInputs(); drawSheet(); return; }
-  try{ await entriesCol.doc(sheet.id).delete(); sheet=null; drawSheet(); toast("Deleted"); }
+  try{ await entriesCol.doc(sheet.id).delete(); sheet=null; drawSheet(); }
   catch(x){ document.getElementById("amtErr").textContent=writeError(x); }
 }
 function writeError(x){ const c=x&&x.code; if(c==="quota_exceeded") return "Storage is full. Download Excel and remove old entries."; if(c==="invalid_argument") return "You can only view this page, not change it."; return "Couldn't save. Check your internet and try again."; }
@@ -1377,11 +1426,37 @@ async function downloadExcel(){
 
 /* ---------- toast ---------- */
 let toastTimer=null;
+/* ---------- hold an entry: small menu with Edit, Duplicate, Delete ---------- */
+let holdT=null, holdXY=null, holdFired=false;
+function closeHold(){ const m=document.getElementById("holdMenu"); if(m) m.remove(); }
+function openHold(row){
+  const id=row.dataset.edit, e=E.find(x=>x.id===id); if(!e) return; closeHold();
+  const b=row.getBoundingClientRect(), ov=document.createElement("div"); ov.className="hm"; ov.id="holdMenu";
+  const c=row.cloneNode(true); c.removeAttribute("data-edit"); c.className=row.className+" hrow";
+  c.style.cssText=`left:${b.left-14}px;top:${b.top-6}px;width:${b.width+28}px;height:${b.height+12}px`; ov.appendChild(c);
+  const I={edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',dup:'<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',del:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>'};
+  const m=document.createElement("div"); m.className="hmenu";
+  m.innerHTML=`<button type="button" data-hm="edit"><span>Edit</span><svg viewBox="0 0 24 24">${I.edit}</svg></button><button type="button" data-hm="dup"><span>Duplicate</span><svg viewBox="0 0 24 24">${I.dup}</svg></button><button type="button" class="red" data-hm="del"><span>Delete</span><svg viewBox="0 0 24 24">${I.del}</svg></button>`;
+  const below=b.bottom+16+140 < innerHeight-90;
+  m.style.right=Math.max(16,innerWidth-b.right-14)+"px"; if(below) m.style.top=(b.bottom+16)+"px"; else m.style.bottom=(innerHeight-b.top+16)+"px";
+  ov.appendChild(m); document.body.appendChild(ov);
+  ov.addEventListener("click",async ev=>{ const k=ev.target.closest("[data-hm]"); closeHold(); if(!k) return; const a=k.dataset.hm;
+    if(a==="edit") openSheet(e.type,e);
+    else if(a==="dup"){ openSheet(e.type,e); sheet.editing=false; sheet.id=null; sheet.e.date=todayStr(); delete sheet.e.id; delete sheet.e.created; drawSheet(); }
+    else if(a==="del"){ try{ await entriesCol.doc(id).delete(); }catch(x){ toast(writeError(x)); } } });
+  if(navigator.vibrate) try{ navigator.vibrate(10); }catch(x){}
+}
+document.addEventListener("pointerdown",ev=>{ const r=ev.target.closest(".item[data-edit]"); clearTimeout(holdT); holdFired=false; if(!r||document.getElementById("holdMenu")) return;
+  holdXY=[ev.clientX,ev.clientY]; holdT=setTimeout(()=>{ holdFired=true; openHold(r); },450); });
+document.addEventListener("pointermove",ev=>{ if(holdT && holdXY && Math.hypot(ev.clientX-holdXY[0],ev.clientY-holdXY[1])>10){ clearTimeout(holdT); holdT=null; } });
+["pointerup","pointercancel","scroll"].forEach(n=>document.addEventListener(n,()=>{ clearTimeout(holdT); holdT=null; },true));
+document.addEventListener("contextmenu",ev=>{ if(ev.target.closest(".item[data-edit]")) ev.preventDefault(); });
+document.addEventListener("click",ev=>{ if(holdFired){ holdFired=false; ev.preventDefault(); ev.stopImmediatePropagation(); } },true);
 function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{h.innerHTML="";},2600); }
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("[data-lockafter],#usePin,#useFace,#lockArea,[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
   if(t.dataset.goal){ carGoal=t.dataset.goal; goalsOpen=false; tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); return; }
   if(t.id==="goalsDone"){ goalsOpen=false; render(); return; }
@@ -1409,7 +1484,10 @@ document.addEventListener("click", ev=>{
   if(t.dataset.card!==undefined){ const c=t.dataset.card; const btns=[...document.querySelectorAll(".wc")]; const isFront=btns.length && btns[btns.length-1]===t;
     if(isFront){ if(c==="__goal"){ goalsOpen=true; render(); } return; }
     frontCard=c; try{localStorage.setItem("mm.card",c);}catch(e){} render(); return; }
-  if(t.id==="faceBtn"){ faceUnlock(); return; }
+  if(t.id==="faceBtn"||t.id==="lockArea"){ faceUnlock(); return; }
+  if(t.id==="usePin"){ lockPin=true; render(); return; }
+  if(t.id==="useFace"){ lockPin=false; render(); faceUnlock(); return; }
+  if(t.dataset.lockafter!=null){ try{ localStorage.setItem("mm.lockAfter",t.dataset.lockafter); }catch(e){} document.querySelectorAll("[data-lockafter]").forEach(b=>{ b.querySelector(".tick").textContent=b===t?"✓":""; }); toast("Kifaya will lock "+({"0":"immediately","60":"after 1 minute","300":"after 5 minutes","close":"only when you close it"}[t.dataset.lockafter])); return; }
   if(t.id==="faceOn"){ faceSetup(); return; }
   if(t.id==="faceOff"){ try{ localStorage.removeItem("mm.faceid"); }catch(e){} render(); toast("Face ID is off. Use your PIN."); return; }
   if(t.id==="sheetBg"){ if(ev.target===t){ sheet=null; drawSheet(); } return; }
@@ -1459,7 +1537,7 @@ document.addEventListener("click", ev=>{
 document.addEventListener("submit", async ev=>{
   if(ev.target.id==="setForm") return saveSettings(ev);
   if(ev.target.id==="lockForm"){ ev.preventDefault(); const p=document.getElementById("pinIn").value.trim(); const h=await hashPin(p);
-    if(h===S.pinHash){ unlocked=h; try{sessionStorage.setItem("mm.unlock",h);}catch(e){} render(); }
+    if(h===S.pinHash){ unlocked=h; try{sessionStorage.setItem("mm.unlock",h);}catch(e){} afterUnlock(); }
     else { document.getElementById("pinErr").textContent="That PIN isn't right. Try again."; document.getElementById("pinIn").value=""; } }
 });
 document.addEventListener("toggle", ev=>{ const d=ev.target; if(d && d.dataset && d.dataset.sec){ if(d.open) openSecs.add(d.dataset.sec); else openSecs.delete(d.dataset.sec); } }, true);
