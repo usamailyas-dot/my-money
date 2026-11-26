@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.21 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.22 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -939,7 +939,7 @@ function viewHome(){
   const WCOL=["linear-gradient(160deg,#2F3833,#1C2320)","linear-gradient(160deg,#B49A78,#97805F)","linear-gradient(160deg,#3B4A5A,#2A3541)","linear-gradient(160deg,#8A5A44,#6E4636)","linear-gradient(160deg,#5E6B52,#47523D)"];
   const cards=daily.map((a,i)=>({k:a.name, name:wallet(a.name), sub:a.name.toLowerCase()==="cash"?"Cash":"", amt:b[a.name]||0, bg:a.name.toLowerCase()==="cash"?WCOL[1]:WCOL[i===0?0:(i+1)%WCOL.length]}));
   const GL=goalList(), multi=GL.length>1;
-  cards.push({k:"__goal", name:multi?"Goals · "+GL.length:(S.goal.name||"Goal")+" fund", sub:S.goal.account, amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
+  cards.push({k:"__goal", name:multi?"Goals · "+GL.length:"Goals", sub:S.goal.account, amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
   const def=acctNames().includes(S.defaults.spent)?S.defaults.spent:(cards[0]&&cards[0].k);
   const front=cards.some(c=>c.k===frontCard)?frontCard:def;
   const order=cards.filter(c=>c.k!==front).concat(cards.filter(c=>c.k===front));
@@ -952,7 +952,7 @@ function viewHome(){
   <div class="htop"><h1 class="brand"><span class="kaf"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg></span>Kifaya</h1><div class="tbtns"><button class="gbtn" data-add="Spent" aria-label="Add an entry"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><span class="gpill"><button class="gbtn in" id="searchBtn" aria-label="Search all entries"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button><button class="gbtn in" data-tab="settings" aria-label="More"><svg viewBox="0 0 24 24" class="dots"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></span></div></div>
   <div class="htotal"><p class="lab">Money I have</p><p class="big"><small>Rs</small>${hid(have)}</p></div>
   ${goalsOpen?`<section class="gpanel2" style="background:linear-gradient(160deg,#2C5E48,#1F4D3A)">
-    <div class="r"><span style="font-size:18px">${multi?"Goals":esc(S.goal.name||"Goal")+" fund"}</span><button class="gdone" id="goalsDone">Done</button></div>
+    <div class="r"><span style="font-size:18px">Goals</span><button class="gdone" id="goalsDone">Done</button></div>
     <p class="gsub">Saved in total · kept in ${esc(S.goal.account)}</p><p class="amt"><small>Rs</small>${hid(cf)}</p>
     ${GL.map(g=>{ const f=goalFund(g.id), pr=+g.price||0, p=pr?Math.min(100,f/pr*100):0; return `<button class="grow" data-goal="${esc(g.id)}"><span class="r"><span>${esc(g.name||"Goal")}</span><span>${hid(f)}</span></span><span class="gbar"><i style="width:${Math.max(p,1.5)}%"></i></span><span class="gfoot"><span>${pr?p.toFixed(p<10?1:0)+"% of "+esc(lac(pr)):"No target set"}</span><span>›</span></span></button>`; }).join("")}
     <button class="grow gnew" id="newGoal">+ New goal</button>
