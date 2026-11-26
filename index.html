@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.7 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.7.1 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -357,7 +357,10 @@ const FILL=new Set(["se","से","سے","mein","main","में","میں","me"
 const TYPEW={Moved:["atm","एटीएम","اے ٹی ایم","nikale","nikaale","nikala","निकाले","निकाला","نکالے","نکالا","withdraw","transfer","ट्रांसफर","ٹرانسفر","moved"],
  Spent:["kharcha","kharch","ख़र्चा","खर्चा","खर्च","خرچہ","خرچ","spent","diye","diya","दिए","दिया","دیے","دیا","liya","liye","लिया","लिए","لیا","لیے","paid","pay"],
  Received:["received","mila","mile","mili","मिला","मिले","मिली","ملا","ملے","ملی","aaye","aaya","आए","आया","आये","آئے","آیا","salary","सैलरी","سیلری","tankhwah","तनख्वाह","تنخواہ","income","got"]};
-const ACCW={bank:["bank","बैंक","بینک","card","कार्ड","کارڈ"],cash:["cash","कैश","کیش","wallet","वॉलेट","والٹ","jeb","जेब","جیب","naqad","नकद","نقد"]};
+const ACCW={bank:["bank","बैंक","بینک","card","कार्ड","کارڈ"],cash:["cash","कैश","کیش","wallet","वॉलेट","والٹ","jeb","जेब","جیب","naqad","नकद","نقد"],
+ nayapay:["nayapay","naya pay","नयापे","नया पे","नयापै","نیا پے","نیاپے","نیا پے"],jazzcash:["jazzcash","jazz cash","जैज़कैश","जैज कैश","جاز کیش","جازکیش"],
+ easypaisa:["easypaisa","easy paisa","ईज़ीपैसा","ईजी पैसा","ایزی پیسہ"],sadapay:["sadapay","sada pay","सदापे","سادہ پے"]};
+function accSyn(n){ const k=n.toLowerCase().replace(/\s+/g,""); return (ACCW[k]||[]).concat([n.toLowerCase()]); }
 const CATW=[["Rent",["rent","रेंट","رینٹ","kiraya","किराया","کرایہ"]],
  ["Subscriptions",["subscription","netflix","youtube","यूट्यूब","icloud","hbo","spotify","canva","prime","chatgpt"]],
  ["Mobile & phone",["mobile","मोबाइल","موبائل","phone","फ़ोन","फोन","فون","load","लोड","لوڈ","package","पैकेज","پیکج"]],
@@ -396,14 +399,19 @@ function vEntry(words){
   const str=" "+words.join(" ")+" ";
   let type="Spent"; if(vHas(str,TYPEW.Moved)) type="Moved"; else if(vHas(str,TYPEW.Spent)) type="Spent"; else if(vHas(str,TYPEW.Received)) type="Received";
   const names=acctNames(), found=[];
-  names.forEach(n=>{ const ln=n.toLowerCase(); const syn=ln==="bank"?ACCW.bank:ln==="cash"?ACCW.cash:[ln]; let pos=-1; syn.forEach(w=>{ const k=str.indexOf(w.length<4&&/^[a-z]/.test(w)?" "+w:w); if(k>=0 && (pos<0||k<pos)) pos=k; }); if(pos>=0) found.push([pos,n]); });
-  found.sort((a,b)=>a[0]-b[0]); const accs=found.map(x=>x[1]);
+  names.forEach(n=>{ let pos=-1, len=0; accSyn(n).forEach(w=>{ const k=str.indexOf(/^[a-z]/.test(w)?" "+w:w); if(k>=0 && (pos<0||k<pos)){ pos=k; len=w.length; } }); if(pos>=0) found.push([pos,n,len]); });
+  found.sort((a,b)=>a[0]-b[0]);
+  const isFrom=f=>/^\s*(se|से|سے|say)(\s|$)/.test(str.slice(f[0]+f[2]+(str[f[0]]===" "?1:0)));
+  if(found.length>=2){ const fi=found.findIndex(isFrom); if(fi>0) found.unshift(found.splice(fi,1)[0]); }
+  const accs=found.map(x=>x[1]);
+  if(accs.length>=2 && type!=="Received") type="Moved";
   let cat="";
   if(type==="Spent"){ for(const [c,ws] of CATW){ if(vHas(str,ws)){ const real=S.categories.find(x=>x.toLowerCase()===c.toLowerCase()); if(real){ cat=real; break; } } } if(!cat) cat=S.categories.includes("Other")?"Other":(S.categories[0]||"Other"); }
   let from="", to="";
   if(type==="Moved"){ from=accs[0]||(names.includes("Bank")?"Bank":names[0]); to=accs[1]||(accs[0]&&accs[0]!=="Cash"&&names.includes("Cash")?"Cash":(from==="Cash"?(names.find(n=>n!=="Cash")||""):"Cash")); if(accs.length===1 && accs[0]==="Cash" && vHas(str,["atm","एटीएम","nikale","निकाले","نکالے"])){ from=names.includes("Bank")?"Bank":names[0]; to="Cash"; } }
   else from=accs[0]||(type==="Received"?S.defaults.received:S.defaults.spent);
-  const drop=new Set([...FILL]); Object.values(TYPEW).flat().forEach(w=>drop.add(w)); Object.values(ACCW).flat().forEach(w=>drop.add(w)); names.forEach(n=>drop.add(n.toLowerCase()));
+  if(type==="Moved" && to && to===S.goal.account && from!==S.goal.account) type="Car";
+  const drop=new Set([...FILL,"andar","अंदर","اندر","hua","हुआ","ہوا","add","ایڈ","ऐड","dale","daale","डाले","ڈالے","naya","pay","नया","پے","نیا","jazz","easy","paisa","sada","wapas","वापस","واپس"]); Object.values(TYPEW).flat().forEach(w=>drop.add(w)); Object.values(ACCW).flat().forEach(w=>w.split(" ").forEach(x=>drop.add(x))); names.forEach(n=>drop.add(n.toLowerCase()));
   const note=words.filter(w=>!drop.has(w) && !SEPW.has(w) && !(w in NUMW) && !(w in MULT) && !(w in FRAC) && !(w in PRE) && !/^\d+(\.\d+)?$/.test(w)).join(" ").trim();
   return {type,cat,from,to,note:note?note.charAt(0).toUpperCase()+note.slice(1):""};
 }
@@ -427,9 +435,9 @@ let voice=null, rec=null;
 function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1); }
 function vLang(){ try{ return localStorage.getItem("mm.vlang")||"ur"; }catch(e){ return "ur"; } }
 function openVoice(listen){ voice={text:"",items:[],listening:false,msg:""}; drawVoice(); if(listen) setTimeout(startRec,150); }
-function vItemRow(e,i){ const what=e.type==="Spent"?e.cat:e.type==="Received"?"Money in":"Moved";
-  const sub=[e.type==="Moved"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
-  return `<div class="vrow"><span class="dot ${e.type==="Spent"?"d-out":e.type==="Received"?"d-in":"d-mv"}" aria-hidden="true">${e.type==="Spent"?"−":e.type==="Received"?"+":"⇄"}</span><span class="txt"><span class="t1">${esc(what)} · ${rs(e.amount)}</span><span class="t2">${esc(sub)}</span></span><button class="x" data-vedit="${i}" aria-label="Change">✎</button><button class="x" data-vdel="${i}" aria-label="Remove">×</button></div>`; }
+function vItemRow(e,i){ const what=e.type==="Spent"?e.cat:e.type==="Received"?"Money in":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():"Moved";
+  const sub=[e.type==="Moved"||e.type==="Car"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
+  return `<div class="vrow"><span class="dot ${e.type==="Spent"?"d-out":e.type==="Received"?"d-in":e.type==="Car"?"d-car":"d-mv"}" aria-hidden="true">${e.type==="Spent"?"−":e.type==="Received"?"+":e.type==="Car"?"★":"⇄"}</span><span class="txt"><span class="t1">${esc(what)} · ${rs(e.amount)}</span><span class="t2">${esc(sub)}</span></span><button class="x" data-vedit="${i}" aria-label="Change">✎</button><button class="x" data-vdel="${i}" aria-label="Remove">×</button></div>`; }
 function drawVoice(){
   const host=document.getElementById("sheetHost"); if(!voice){ host.innerHTML=""; return; }
   const L=vLang(), on=voice.listening;
@@ -462,7 +470,7 @@ function stopRec(){ if(!voice) return; voice.listening=false; try{ rec && rec.st
 async function saveVoice(){
   const btn=document.getElementById("vSave"); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   const pasted=String(voice.text).indexOf("•")>=0; let n=0;
-  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:"", from:e.from||"", to:e.type==="Moved"?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
+  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:"", from:e.from||"", to:(e.type==="Moved"||e.type==="Car")?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
     if(pasted){ try{ await navigator.clipboard.writeText(""); }catch(x){} }
     voice=null; drawVoice(); toast("Saved "+n+" entr"+(n===1?"y":"ies")); }
   catch(x){ if(btn){ btn.disabled=false; btn.textContent="Save all"; } document.getElementById("vErr").textContent=writeError(x); }
