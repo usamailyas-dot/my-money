@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.30 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.31 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -907,7 +907,7 @@ function render(){
   if(!ready.profile||!ready.entries){ app.innerHTML=`<div class="card empty">Loading your money…</div>`; return; }
   if(PHONE && fresh && !E.length){ document.getElementById("tabs").innerHTML=""; app.innerHTML=viewSetup(); return; }
   if(S.pinHash && unlocked!==S.pinHash){
-    { const bb=document.getElementById("bkBar"); if(bb) bb.remove(); }
+    { const bb=document.getElementById("bkBar")||document.getElementById("mvBar"); if(bb) bb.remove(); }
     document.getElementById("tabs").innerHTML="";
     const face=faceId()&&canFace();
     const KAF=`<svg class="lk" viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg>`;
@@ -1341,7 +1341,17 @@ function backupDue(){
   const base=last?new Date(last+"T00:00:00").getTime():first, days=(Date.now()-base)/864e5;
   return days >= (last?30:7);
 }
+const NEWHOME="https://getkifaya.github.io/", MOVED=location.hostname==="usamailyas-dot.github.io";
 function backupBar(){
+  if(MOVED){ /* the old link: point people to the new one */
+    const want=!(S.pinHash && unlocked!==S.pinHash) && !sheet; const old=document.getElementById("mvBar");
+    if(!want){ if(old) old.remove(); return; } if(old) return;
+    const d=document.createElement("div"); d.className="updbar"; d.id="mvBar"; d.setAttribute("role","status"); d.style.height="auto"; d.style.padding="12px 8px 12px 16px"; d.style.alignItems="center";
+    d.innerHTML='<span style="line-height:1.35">Kifaya has a new link.<br><span style="opacity:.7;font-size:13px">Back up, open the new link, then restore.</span></span><span style="display:flex;flex-direction:column;gap:2px"><button type="button" id="mvBk">Back up</button><button type="button" id="mvGo">Open</button></span>';
+    document.body.appendChild(d);
+    document.getElementById("mvBk").addEventListener("click",()=>downloadBackup());
+    document.getElementById("mvGo").addEventListener("click",()=>{ window.open(NEWHOME,"_blank"); });
+    return; }
   const old=document.getElementById("bkBar");
   const want=tab==="home" && !sheet && !(S.pinHash && unlocked!==S.pinHash) && !document.getElementById("updBar") && backupDue();
   if(!want){ if(old) old.remove(); return; } if(old) return;
