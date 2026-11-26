@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.10 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.11 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -804,10 +804,11 @@ function viewSettings(){
     <div class="setrow"><span class="small">Already saved before tracking</span><input id="g-already" inputmode="decimal" value="${esc(s.goal.already||0)}"></div>
     <div class="setrow"><span class="small">Target date (optional)</span><input type="date" id="g-target" value="${esc(s.goal.target||"")}"></div>`)}
     ${sec("bills","Monthly bills",s.bills.length+" bill"+(s.bills.length===1?"":"s"),`
-    <p class="note">Leave the amount empty if it changes every month. The day is the due date.</p>
+    <p class="note">The day is the due date. Leave the amount empty if you never know it in advance. If it's usually the same, type it: when you tap Mark paid you can still change it before saving.</p>
     ${s.bills.map((b,i)=>`<div class="billrow"><input id="b-n-${i}" value="${esc(b.name)}" aria-label="Bill name"><input id="b-a-${i}" inputmode="decimal" value="${billAmt(b)?esc(b.amount):""}" placeholder="changes" aria-label="Amount (empty if it changes)"><input id="b-d-${i}" inputmode="numeric" value="${esc(b.day||"")}" placeholder="day" aria-label="Due day"><button type="button" class="x" data-delbill="${i}" aria-label="Remove ${esc(b.name)}">×</button></div>
       <div class="setrow" style="margin-top:-4px"><span class="small muted">Category · word in note</span><div class="grid2" style="gap:6px">${catSel("b-c-"+i,b.cat)}<input id="b-w-${i}" value="${esc(b.word||"")}" aria-label="Word"></div></div>`).join("")}
-    <button type="button" class="ghost" id="addBill">Add a bill</button>`)}
+    <button type="button" class="ghost" id="addBill">Add a bill</button>
+    <label class="ghost" style="text-align:center;cursor:pointer">Add bills from a file<input type="file" id="billsf" accept=".json,application/json" hidden></label>`)}
     ${sec("cats","Categories and limits",s.categories.length+" categories",`
     <p class="note">A limit is optional. The Month screen warns you when a category gets close to its limit.</p>
     ${s.categories.map((c,i)=>`<div class="billrow" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 36px"><input id="c-n-${i}" value="${esc(c)}" aria-label="Category"><input id="c-l-${i}" inputmode="decimal" value="${esc(s.limits[c]||"")}" placeholder="no limit" aria-label="Limit"><button type="button" class="x" data-delcat="${i}" aria-label="Remove ${esc(c)}">×</button></div>`).join("")}
@@ -1132,7 +1133,19 @@ document.addEventListener("submit", async ev=>{
     else { document.getElementById("pinErr").textContent="That PIN isn't right. Try again."; document.getElementById("pinIn").value=""; } }
 });
 document.addEventListener("toggle", ev=>{ const d=ev.target; if(d && d.dataset && d.dataset.sec){ if(d.open) openSecs.add(d.dataset.sec); else openSecs.delete(d.dataset.sec); } }, true);
-document.addEventListener("change", ev=>{ if(ev.target.id==="rsf" && ev.target.files && ev.target.files[0]){ restoreBackup(ev.target.files[0]); ev.target.value=""; } });
+async function addBillsFile(f){
+  let d=null; try{ d=JSON.parse(await f.text()); }catch(x){}
+  const list=d && d.app==="my-money" && d.kind==="bills" && Array.isArray(d.bills) ? d.bills : null;
+  if(!list){ toast("That isn't a My Money bills file"); return; }
+  const N=clone(S), have=new Set(N.bills.map(b=>norm(b.name))); let n=0;
+  list.forEach(b=>{ const name=String(b.name||"").trim(); if(!name || have.has(norm(name))) return;
+    const cat=S.categories.find(c=>c.toLowerCase()===String(b.cat||"").toLowerCase())||"";
+    N.bills.push({name, amount:+b.amount||0, day:parseInt(b.day)||"", cat, word:String(b.word||"")}); have.add(norm(name)); n++; });
+  if(!n){ toast("Those bills are already in your list"); return; }
+  try{ await profileRef.set(N); S=N; openSecs.add("bills"); render(); toast("Added "+n+" bill"+(n===1?"":"s")+". Check them below."); }
+  catch(x){ toast(writeError(x)); }
+}
+document.addEventListener("change", ev=>{ if(ev.target.id==="billsf" && ev.target.files && ev.target.files[0]){ addBillsFile(ev.target.files[0]); ev.target.value=""; return; } if(ev.target.id==="rsf" && ev.target.files && ev.target.files[0]){ restoreBackup(ev.target.files[0]); ev.target.value=""; } });
 document.addEventListener("input", ev=>{ if(ev.target.id==="amt"){ const e=document.getElementById("amtErr"); if(e) e.textContent=""; } });
 document.addEventListener("keydown", ev=>{ if(ev.key==="Escape" && voice){ stopRec(); voice=null; drawVoice(); } if(ev.key==="Escape" && sheet){ sheet=null; drawSheet(); } if(ev.key==="Enter" && sheet && ev.target.tagName==="INPUT"){ ev.preventDefault(); saveSheet(); } if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("su-")){ ev.preventDefault(); setupAction(setup.step===3?"finish":"next"); } });
 
