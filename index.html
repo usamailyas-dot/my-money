@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.23 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.24 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -491,17 +491,18 @@ function parseAmount(t){
   if(!m) return NaN; let v=parseFloat(m[1].replace(/,/g,"")); if(m[2]==="k") v*=1000; else if(m[2]) v*=100000; return Math.round(v*100)/100;
 }
 /* ---------- Face ID (passkey on this device only; nothing leaves the phone) ---------- */
+const ANDROID=/Android/i.test(navigator.userAgent||""), BIO=ANDROID?"Fingerprint":"Face ID"; /* Android lets web apps use the fingerprint, so say that there */
 function canFace(){ return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext); }
 function faceId(){ try{ return localStorage.getItem("mm.faceid")||""; }catch(e){ return ""; } }
 function b64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 function unb64(t){ return Uint8Array.from(atob(t),c=>c.charCodeAt(0)); }
 function rnd(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return a; }
 async function faceSetup(){
-  if(!canFace()){ toast("Face ID isn't available here"); return; }
+  if(!canFace()){ toast(BIO+" isn't available here"); return; }
   try{ const c=await navigator.credentials.create({publicKey:{rp:{name:"Kifaya",id:location.hostname}, user:{id:rnd(16),name:"Kifaya",displayName:"Kifaya"}, challenge:rnd(32),
       pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}], authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"}, timeout:60000, attestation:"none"}});
-    if(!c) throw 0; try{ localStorage.setItem("mm.faceid",b64(c.rawId)); }catch(e){} render(); toast("Face ID is on. Next time, tap Unlock with Face ID."); }
-  catch(x){ toast("Face ID wasn't turned on. Try again."); }
+    if(!c) throw 0; try{ localStorage.setItem("mm.faceid",b64(c.rawId)); }catch(e){} render(); toast(BIO+" is on. Next time Kifaya asks for it by itself."); }
+  catch(x){ toast(BIO+" wasn't turned on. Try again."); }
 }
 async function faceUnlock(auto){
   const id=faceId(); if(!id||!canFace()) return;
@@ -509,7 +510,7 @@ async function faceUnlock(auto){
   try{ const a=await navigator.credentials.get({publicKey:{challenge:rnd(32), rpId:location.hostname, allowCredentials:[{type:"public-key",id:unb64(id)}], userVerification:"required", timeout:60000}});
     if(a && a.response && (a.response.authenticatorData||a.response.signature)){ unlocked=S.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} afterUnlock(); return; }
     throw 0; }
-  catch(x){ if(err && !auto) err.textContent="Face ID didn't work. Try again or type your PIN."; }
+  catch(x){ if(err && !auto) err.textContent=BIO+" didn't work. Try again or type your PIN."; }
 }
 /* ---------- auto-lock: "0" immediately, "60" / "300" seconds away, "close" only when the app is closed ---------- */
 function lockAfter(){ try{ const v=localStorage.getItem("mm.lockAfter"); return v==null?"0":v; }catch(e){ return "0"; } }
@@ -898,15 +899,16 @@ function render(){
     document.getElementById("tabs").innerHTML="";
     const face=faceId()&&canFace();
     const KAF=`<svg class="lk" viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg>`;
+    const FPR=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.2A8 8 0 0 1 19.6 9.5"/><path d="M4.3 10.5a8 8 0 0 1 .8-2.3"/><path d="M8 19.5c-1-1.6-1.6-3.5-1.6-5.5a5.6 5.6 0 0 1 11.2 0v.8"/><path d="M12 11.2a2.8 2.8 0 0 0-2.8 2.8c0 2.6 1 5 2.6 6.8"/><path d="M14.8 14c0 2.2.6 4.2 1.6 5.8"/><path d="M12 14c0 2 .5 3.8 1.4 5.2"/><path d="M17.6 17.5c.2-.8.2-1.6.2-2.5"/></svg>`;
     const FID=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1M15 9v1M12 9v4h-1M9 16c1.7 1.2 4.3 1.2 6 0"/></svg>`;
     app.innerHTML = face && !lockPin
-      ? `<div class="lockw" id="lockArea">${KAF}<p class="lt">Kifaya is locked</p><p class="ls">Tap to unlock with Face ID</p>
-         <button type="button" class="fid" id="faceBtn" aria-label="Unlock with Face ID">${FID}</button><p class="err" id="pinErr"></p>
+      ? `<div class="lockw" id="lockArea">${KAF}<p class="lt">Kifaya is locked</p><p class="ls">Tap to unlock with ${BIO}</p>
+         <button type="button" class="fid" id="faceBtn" aria-label="Unlock with ${BIO}">${ANDROID?FPR:FID}</button><p class="err" id="pinErr"></p>
          <button type="button" class="lnk" id="usePin">Use PIN instead</button></div>`
       : `<div class="lockw">${KAF}<p class="lt">Kifaya is locked</p><p class="ls">Enter your PIN</p>
          <form id="lockForm"><input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" class="amount num" aria-label="PIN" placeholder="••••">
          <p class="err" id="pinErr"></p><button class="primary" type="submit">Unlock</button></form>
-         ${face?`<button type="button" class="lnk" id="useFace">Use Face ID instead</button>`:""}</div>`;
+         ${face?`<button type="button" class="lnk" id="useFace">Use ${BIO} instead</button>`:""}</div>`;
     if(!face || lockPin) setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
     else autoFaceAsk();
     return;
@@ -969,7 +971,7 @@ function viewHome(){
       ${isF?`<span class="wbot"><span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?(multi?`<span class="foot" style="display:block">${GL.length} goals · tap to open</span>`:`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to open</span>`):`<span class="foot" style="display:block">${showAmt?"Tap the eye to hide":"Tap the eye to show amounts"}</span>`}</span><span class="eyec" id="eyeBtn" role="button" tabindex="0" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</span></span>`:""}
     </button>`; }).join("")}</div>
   ${warns.map(w=>`<div class="card warnbox" role="alert"><b>Check this</b><p>${w}</p></div>`).join("")}
-  ${PHONE && !standalone() ?`<section class="card"><b>Put Kifaya on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
+  ${PHONE && !standalone() ?`<section class="card"><b>Put Kifaya on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">${ANDROID?"In Chrome, tap the three dots at the top right, then <b>Install app</b> or <b>Add to Home screen</b>":"In Safari, tap the Share button, then <b>Add to Home Screen</b>"}. It then opens like an app, full screen, even without internet.</p></section>`:""}
   <button class="voicebtn" data-voice="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak or paste</button>
   <div class="secthead"><h2>${esc(MON[+k.slice(5,7)-1])}</h2><button class="linkbtn" data-tab="month">See month</button></div>
   <section class="card two"><div><p class="lab">Money in</p><p class="v">${money(sumType(mon,"Received"))}</p></div><div><p class="lab">Money out</p><p class="v">${money(sumType(mon,"Spent"))}</p></div></section>
@@ -1140,6 +1142,7 @@ function viewSettings(){
     <p class="flab">Balances on ${esc(shortDate(s.startDate))} ${esc(s.startDate.slice(0,4))} (when you started)</p>
     ${s.accounts.map((a,i)=>`<div class="setrow"><input id="acc-n-${i}" value="${esc(a.name)}" aria-label="Account name"><input id="acc-o-${i}" inputmode="decimal" value="${esc(a.open)}" aria-label="Balance"></div>`).join("")}
     <div class="setrow"><input id="acc-n-new" placeholder="New account, like JazzCash" aria-label="New account name"><input id="acc-o-new" inputmode="decimal" placeholder="0" aria-label="New account balance"></div>
+    <button type="button" class="ghost" id="addAcc" style="background:var(--bg);color:var(--car);font-weight:600">+ Add account</button>
     <div class="field"><label for="startDate">Balances counted from</label><input type="date" id="startDate" value="${esc(s.startDate)}"></div>
     <p class="flab" style="margin-top:6px">Fix a balance (if the app and your bank differ)</p>
     ${s.accounts.map((a,i)=>`<div class="setrow"><span class="small">${esc(wallet(a.name))} correction</span><input id="acc-c-${i}" inputmode="decimal" value="${esc(a.corr||0)}" aria-label="${esc(a.name)} correction"></div>`).join("")}`)}
@@ -1167,10 +1170,10 @@ function viewSettings(){
     ${sec("lock","PIN lock",s.pinHash?"On":"Off",`
     <div class="setrow"><span class="small">${s.pinHash?"PIN is on. New PIN (leave empty to keep)":"PIN (4 to 8 numbers, optional)"}</span><input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${s.pinHash?"••••":"none"}"></div>
     ${s.pinHash?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinOff" style="width:auto"> Turn the PIN off</label>`:""}
-    ${s.pinHash&&canFace()?(faceId()?`<div class="setrow"><span class="small">Face ID is on for this phone. Your PIN still works as a backup.</span><button type="button" class="ghost" id="faceOff">Turn off Face ID</button></div>`:`<button type="button" class="ghost" id="faceOn">Use Face ID to unlock</button><p class="note">Face ID stays on this phone. Your PIN still works as a backup.</p>`):""}
+    ${s.pinHash&&canFace()?(faceId()?`<div class="setrow"><span class="small">${BIO} is on for this phone. Your PIN still works as a backup.</span><button type="button" class="ghost" id="faceOff">Turn off ${BIO}</button></div>`:`<button type="button" class="ghost" id="faceOn">Use ${BIO} to unlock</button><p class="note">${BIO} stays on this phone. Your PIN still works as a backup.</p>`):""}
     ${s.pinHash?`<p class="small" style="font-weight:600;margin-top:6px">Lock the app</p>
     <div class="lopts">${[["0","Immediately"],["60","After 1 minute"],["300","After 5 minutes"],["close","Only when I close it"]].map(([v,l])=>`<button type="button" class="lopt" data-lockafter="${v}"><span>${l}</span><span class="tick">${lockAfter()===v?"✓":""}</span></button>`).join("")}</div>
-    <p class="note">"Immediately" works like WhatsApp: every time you leave Kifaya, it locks. When you come back, ${faceId()?"tap once and Face ID opens it":"type your PIN"}.</p>`:""}`)}
+    <p class="note">"Immediately" works like WhatsApp: every time you leave Kifaya, it locks. When you come back, ${faceId()?"tap once and "+BIO+" opens it":"type your PIN"}.</p>`:""}`)}
     <p class="err" id="setErr"></p>
     <button class="primary" type="submit">Save settings</button>
   </form>
@@ -1193,7 +1196,7 @@ function viewSettings(){
     <li><b>Speak:</b> tap <b>Speak or paste</b> on Home, tap the mic and speak in English. Say one or many, like "500 food, 1200 petrol from bank, 300 tea cash". Add a date if it wasn't today, like "yesterday" or "24th November". Tap the mic again, check the list, tap <b>Save all</b>.</li>
     <li><b>Speak while looking at your bank app (Voice Memos):</b> open Voice Memos and tap record. Switch to your bank app and say each transaction. Go back, stop, open the recording, tap the transcript icon, select all and Copy. In Kifaya tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
     <li><b>People:</b> money you lent or borrowed. It changes your balance but isn't counted as spending or income. Tap <b>Paid back</b> when it's returned.</li>
-    <li><b>Face ID:</b> if you use a PIN, go to Settings ▸ PIN lock ▸ <b>Use Face ID to unlock</b>. Then tap <b>Unlock with Face ID</b> when the app opens. Your PIN still works as a backup.</li>
+    <li><b>${BIO}:</b> if you use a PIN, go to Settings ▸ PIN lock ▸ <b>Use ${BIO} to unlock</b>. After that, Kifaya asks for it by itself when you open it. Your PIN still works as a backup.</li>
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
     <li><b>Bills:</b> tap Mark paid, or pick the bill when you add a Spent. You can change the amount before saving, so bills that change each month still work.</li>
@@ -1463,7 +1466,7 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-lockafter],#usePin,#useFace,#lockArea,[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("#addAcc,[data-lockafter],#usePin,#useFace,#lockArea,[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
   if(t.dataset.goal){ carGoal=t.dataset.goal; goalsOpen=false; tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); return; }
   if(t.id==="goalsDone"){ goalsOpen=false; render(); return; }
@@ -1496,7 +1499,7 @@ document.addEventListener("click", ev=>{
   if(t.id==="useFace"){ lockPin=false; render(); faceUnlock(); return; }
   if(t.dataset.lockafter!=null){ try{ localStorage.setItem("mm.lockAfter",t.dataset.lockafter); }catch(e){} document.querySelectorAll("[data-lockafter]").forEach(b=>{ b.querySelector(".tick").textContent=b===t?"✓":""; }); toast("Kifaya will lock "+({"0":"immediately","60":"after 1 minute","300":"after 5 minutes","close":"only when you close it"}[t.dataset.lockafter])); return; }
   if(t.id==="faceOn"){ faceSetup(); return; }
-  if(t.id==="faceOff"){ try{ localStorage.removeItem("mm.faceid"); }catch(e){} render(); toast("Face ID is off. Use your PIN."); return; }
+  if(t.id==="faceOff"){ try{ localStorage.removeItem("mm.faceid"); }catch(e){} render(); toast(BIO+" is off. Use your PIN."); return; }
   if(t.id==="sheetBg"){ if(ev.target===t){ sheet=null; drawSheet(); } return; }
   if(t.dataset.src){ readSheetInputs(); sheet.e.src = sheet.e.src===t.dataset.src ? "" : t.dataset.src; drawSheet(); return; }
   if(t.dataset.rname!==undefined){ readSheetInputs(); sheet.e.note=t.dataset.rname; if(t.dataset.rsrc) sheet.e.src=t.dataset.rsrc; drawSheet(); return; }
@@ -1537,6 +1540,7 @@ document.addEventListener("click", ev=>{
   if(t.id==="closeSheet"){ const back=sheet&&sheet.back; sheet=null; drawSheet(); if(back){ voice=back; drawVoice(); } return; }
   if(t.id==="saveBtn"){ saveSheet(); return; }
   if(t.id==="delBtn"){ deleteEntry(); return; }
+  if(t.id==="addAcc"){ const n=document.getElementById("acc-n-new"); if(!n.value.trim()){ toast("Type the account name first"); n.focus(); return; } openSecs.add("acc"); document.getElementById("setForm").requestSubmit(); return; }
   if(t.id==="addBill"){ S.bills.push({name:"New bill",amount:0,day:"",cat:"Bills",word:""}); render(); return; }
   if(t.id==="dlx"){ downloadExcel(); return; }
   if(t.id==="dlb"){ downloadBackup(); return; }
