@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.16 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.17 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -357,10 +357,34 @@ input,select,#vtext{border:0;background:var(--surface);border-radius:10px;font-f
 .mchart text.val{fill:var(--ink);font-weight:600;font-size:12px}
 .mchart text.mcur{fill:var(--ink);font-weight:600}
 .passchip{align-self:flex-start}
+/* 1.17 Wallet spacing */
+body{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+:root{--glass:rgba(255,255,255,.78);--glassline:rgba(60,60,67,.12)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--glass:rgba(38,38,40,.82);--glassline:rgba(255,255,255,.10)}}
+:root[data-theme="dark"]{--glass:rgba(38,38,40,.82);--glassline:rgba(255,255,255,.10)}
+.htop{align-items:center;padding-top:max(14px,env(safe-area-inset-top,0px));margin-bottom:6px}
+.htop h1{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.tbtns{display:flex;align-items:center;gap:11px}
+.gbtn{width:40px;height:40px;border-radius:20px;border:.5px solid var(--glassline);background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.gbtn svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.gbtn svg.dots{fill:currentColor;stroke:none}
+.gpill{display:flex;height:40px;border-radius:20px;border:.5px solid var(--glassline);background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 1px 3px rgba(0,0,0,.06);padding:0 4px}
+.gpill .gbtn.in{border:0;background:none;box-shadow:none;width:44px;backdrop-filter:none;-webkit-backdrop-filter:none}
+.htotal{padding:4px 2px 4px}
+.wstack{margin-top:6px}
+.wc{border-radius:22px;padding:18px 20px}
+.wc .r{font-size:16px}
+.wstack+*{margin-top:8px}
+.srpanel{min-height:100%;border-radius:0;padding-top:max(14px,env(safe-area-inset-top,0px))}
+.srpanel .search{flex:1}
+.srpanel .row{gap:12px}
 .glab{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:6px 4px -4px}
 .backbtn{align-self:flex-start;padding:4px 0;font-size:17px}
 .eyebtn{width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .eyebtn svg{width:17px;height:17px}
+.wbot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.wc .eyec{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;display:grid;place-items:center;flex:none;cursor:pointer}
+.wc .eyec svg{width:18px;height:18px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand .kaf{width:30px;height:30px;color:var(--car);display:grid}
 .brand .kaf svg{width:30px;height:30px}
@@ -841,19 +865,18 @@ function viewHome(){
   const def=acctNames().includes(S.defaults.spent)?S.defaults.spent:(cards[0]&&cards[0].k);
   const front=cards.some(c=>c.k===frontCard)?frontCard:def;
   const order=cards.filter(c=>c.k!==front).concat(cards.filter(c=>c.k===front));
-  const STRIP=48, H=206, stackH=STRIP*(order.length-1)+H;
+  const CWID=Math.min(window.innerWidth||390,520)-36, H=Math.round(CWID/1.586), STRIP=54, stackH=STRIP*(order.length-1)+H;
   const money=v=>rs(v).replace("Rs ","");
   const hid=v=>showAmt?money(v):"••••••";
   const EYE=showAmt?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'
     :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2.1 0 3.9.7 5.4 1.7M22 12s-3.5 7-10 7c-2.1 0-3.9-.7-5.4-1.7"/><path d="M3 3l18 18"/></svg>';
   return `
-  <div class="htop"><h1 class="brand"><span class="kaf"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg></span>Kifaya</h1><button class="plusbtn" data-add="Spent" aria-label="Add an entry">+</button></div>
-  <p class="hdate">${esc(new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))}</p>
-  <div class="htotal"><p class="lab" style="display:flex;align-items:center;gap:8px">Money I have <button class="eyebtn" id="eyeBtn" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</button></p><p class="big"><small>Rs</small>${hid(have)}</p></div>
+  <div class="htop"><h1 class="brand"><span class="kaf"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg></span>Kifaya</h1><div class="tbtns"><button class="gbtn" data-add="Spent" aria-label="Add an entry"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><span class="gpill"><button class="gbtn in" id="searchBtn" aria-label="Search all entries"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button><button class="gbtn in" data-tab="settings" aria-label="More"><svg viewBox="0 0 24 24" class="dots"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></span></div></div>
+  <div class="htotal"><p class="lab">Money I have</p><p class="big"><small>Rs</small>${hid(have)}</p></div>
   <div class="wstack" style="height:${stackH}px">${order.map((c,i)=>{ const isF=i===order.length-1;
-    return `<button class="wc" data-card="${esc(c.k)}" style="top:${i*STRIP}px;background:${c.bg}" aria-label="${esc(c.name)}">
+    return `<button class="wc" data-card="${esc(c.k)}" style="top:${i*STRIP}px;height:${H}px;background:${c.bg}" aria-label="${esc(c.name)}">
       <span class="r"><span>${esc(c.name)}${c.goal&&!isF?` <span class="dim">· ${esc(c.sub)}</span>`:""}</span>${isF?`<span class="dim">${esc(c.goal?c.sub:c.sub)}</span>`:`<span>${hid(c.amt)}</span>`}</span>
-      ${isF?`<span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to see the plan</span>`:`<span class="foot" style="display:block">Tap a card above to switch</span>`}</span>`:""}
+      ${isF?`<span class="wbot"><span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to see the plan</span>`:`<span class="foot" style="display:block">${showAmt?"Tap the eye to hide":"Tap the eye to show amounts"}</span>`}</span><span class="eyec" id="eyeBtn" role="button" tabindex="0" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</span></span>`:""}
     </button>`; }).join("")}</div>
   ${warns.map(w=>`<div class="card warnbox" role="alert"><b>Check this</b><p>${w}</p></div>`).join("")}
   ${PHONE && !standalone() ?`<section class="card"><b>Put Kifaya on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
@@ -871,7 +894,6 @@ function viewMonth(){
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const bills=S.bills.map(x=>[x,billStatus(x,k)]);
   const left=bills.filter(([x,s])=>s.state!=="paid"), still=left.reduce((s,[x])=>s+billAmt(x),0), stillVar=varies(left);
-  const q=searchQ.trim();
   const last6=[5,4,3,2,1,0].map(i=>addMonths(k,-i)).map(m=>({m,v:sumType(inMonth(m),"Spent")}));
   const mx=Math.max(1,...last6.map(x=>x.v)), CW=340, CH=120, gap=10, bw=(CW-gap*5)/6;
   const chart=`<div class="secthead"><h2>Money out, last 6 months</h2></div><section class="card"><svg class="mchart" viewBox="0 0 ${CW} ${CH+22}" role="img" aria-label="Money out in the last 6 months">
@@ -881,9 +903,7 @@ function viewMonth(){
       ${cur&&x.v?`<text x="${X+bw/2}" y="${CH-h-6}" text-anchor="middle" class="val">${esc(lac(x.v).replace("Rs ",""))}</text>`:""}<text x="${X+bw/2}" y="${CH+16}" text-anchor="middle" class="${cur?"mcur":"mlab"}">${MON[+x.m.slice(5,7)-1].slice(0,3)}</text><title>${monthName(x.m)}: ${rs(x.v)}</title></g>`; }).join("")}
   </svg><p class="note" style="margin-top:6px">Tap a month to open it. Money that isn't yours is left out.</p></section>`;
   return `
-  <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search all entries" autocomplete="off" value="${esc(searchQ)}" aria-label="Search all entries"></div>
-  <div id="qres">${q?searchHTML(q):""}</div>
-  <div id="mbody" class="mbody" ${q?"hidden":""}>
+  <div id="mbody" class="mbody">
   ${(()=>{ const se=seasonOf(k); return `<div class="mhead month-nav" style="background:${SEASONS[se][1]}">${seasonDeco(se)}<div class="mrow"><button data-mon="-1" aria-label="Previous month">‹</button><div><h2 class="mt">${monthName(k)}</h2><p class="ms">${SEASONS[se][0]}</p></div><button data-mon="1" aria-label="Next month">›</button></div></div>`; })()}
   <div class="grid2">
     <div class="card soft-in"><p class="lab">Money in</p><p class="val num c-in">${rs(inn)}</p></div>
@@ -907,6 +927,11 @@ function viewMonth(){
   <section class="card" style="padding-block:4px">${mon.length?`<div class="list">${sorted(mon).map(entryRow).join("")}</div>`:`<p class="empty">No entries in ${monthName(k)}.</p>`}</section>
   </div>`;
 }
+function openSearch(){ sheet=null; voice=null; const host=document.getElementById("sheetHost");
+  host.innerHTML=`<div class="sheet" id="srBg"><div class="panel srpanel" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="row"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Name, amount, category or month" autocomplete="off" value="${esc(searchQ)}" aria-label="Search all entries"></div><button class="linkbtn" id="srClose">Cancel</button></div>
+    <div id="qres">${searchQ.trim()?searchHTML(searchQ.trim()):`<p class="note" style="margin:8px 4px">Search every entry from every month. Try "food november", "hbo" or "1340".</p>`}</div></div></div>`;
+  setTimeout(()=>{ const i=document.getElementById("q"); if(i) i.focus(); },80); }
 function searchHTML(q){
   const toks=q.toLowerCase().split(/\s+/).filter(Boolean);
   const hay=e=>[e.note,e.who,e.src,e.bill&&e.bill!=="-"?e.bill:"",e.type==="Car"?(S.goal.name||"goal"):e.type,e.pass?"not my money":"",...(e.type==="Spent"?ecats(e):[]),wallet(e.from||""),wallet(e.to||""),
@@ -928,7 +953,7 @@ function viewPeople(){
     ${open?`<div class="catlist"><p class="small muted">${h.length} entr${h.length===1?"y":"ies"} with ${esc(x.name)}</p><div class="list">${h.map(entryRow).join("")}</div></div>`:""}`; };
   const grp=(t,l)=>l.length?`<p class="glab">${t}</p><section class="card group"><div class="list">${l.map(row).join("")}</div></section>`:"";
   return `
-  <div class="htop"><h1>People</h1><button class="plusbtn" data-add="People" aria-label="Lend or borrow">+</button></div>
+  <div class="htop"><h1>People</h1><div class="tbtns"><button class="gbtn" data-add="People" aria-label="Lend or borrow"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
   <p class="hdate">Money you lent or borrowed. It never changes your spending.</p>
   <section class="card two"><div><p class="lab">I owe</p><p class="v">${rs(tot(owe)).replace("Rs ","")}</p></div><div><p class="lab">Owed to me</p><p class="v c-in">${rs(tot(owed)).replace("Rs ","")}</p></div></section>
   ${all.length?grp("I owe",owe)+grp("Owed to me",owed)+grp("Settled",done)+`<p class="note">Tap a person to see every lend and pay-back with them.</p>`
@@ -1260,8 +1285,11 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
+  if(t.id==="searchBtn"){ openSearch(); return; }
+  if(t.id==="srClose"){ document.getElementById("sheetHost").innerHTML=""; return; }
+  if(t.id==="srBg"){ if(ev.target===t) document.getElementById("sheetHost").innerHTML=""; return; }
   if(t.dataset.person!==undefined){ if(ev.target.closest("[data-payback]")) {} else { openPerson=openPerson===t.dataset.person?"":t.dataset.person; render(); return; } }
   if(t.dataset.mjump){ monthKey=t.dataset.mjump; render(); return; }
   if(t.dataset.pass){ readSheetInputs(); sheet.e.pass=!sheet.e.pass; drawSheet(); return; }
@@ -1335,7 +1363,7 @@ async function addBillsFile(f){
   try{ await profileRef.set(N); S=N; openSecs.add("bills"); render(); toast("Added "+n+" bill"+(n===1?"":"s")+". Check them below."); }
   catch(x){ toast(writeError(x)); }
 }
-document.addEventListener("input", ev=>{ if(ev.target.id!=="q") return; searchQ=ev.target.value; const q=searchQ.trim(), r=document.getElementById("qres"), b=document.getElementById("mbody"); if(r) r.innerHTML=q?searchHTML(q):""; if(b) b.hidden=!!q; });
+document.addEventListener("input", ev=>{ if(ev.target.id!=="q") return; searchQ=ev.target.value; const q=searchQ.trim(), r=document.getElementById("qres"); if(r) r.innerHTML=q?searchHTML(q):""; });
 document.addEventListener("change", ev=>{ if(ev.target.id==="billsf" && ev.target.files && ev.target.files[0]){ addBillsFile(ev.target.files[0]); ev.target.value=""; return; } if(ev.target.id==="rsf" && ev.target.files && ev.target.files[0]){ restoreBackup(ev.target.files[0]); ev.target.value=""; } });
 document.addEventListener("input", ev=>{ if(ev.target.id==="amt"){ const e=document.getElementById("amtErr"); if(e) e.textContent=""; } });
 document.addEventListener("keydown", ev=>{ if(ev.key==="Escape" && voice){ stopRec(); voice=null; drawVoice(); } if(ev.key==="Escape" && sheet){ sheet=null; drawSheet(); } if(ev.key==="Enter" && sheet && ev.target.tagName==="INPUT"){ ev.preventDefault(); saveSheet(); } if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("su-")){ ev.preventDefault(); setupAction(setup.step===3?"finish":"next"); } });
