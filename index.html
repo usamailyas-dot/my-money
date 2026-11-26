@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.14 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.15 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -343,6 +343,20 @@ input,select,#vtext{border:0;background:var(--surface);border-radius:10px;font-f
 .two>div{padding:12px 14px}.two>div+div{border-left:.5px solid var(--line)}
 .two .v{font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
 .group{padding:2px 14px}
+.mbody{display:flex;flex-direction:column;gap:12px}
+.mbody[hidden]{display:none}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:10px;padding:0 10px;color:var(--muted)}
+.search svg{width:18px;height:18px;flex:none}
+.search input{background:none;border:0;padding:10px 0;font-size:16px;outline:none}
+.search:focus-within{box-shadow:0 0 0 2px var(--line)}
+.mchart{width:100%;height:auto;display:block}
+.mchart .base{stroke:var(--line);stroke-width:1}
+.mchart .oth{fill:var(--muted);opacity:.35}
+.mchart .cur{fill:var(--ink)}
+.mchart text{font-family:var(--font);font-size:11px;fill:var(--muted)}
+.mchart text.val{fill:var(--ink);font-weight:600;font-size:12px}
+.mchart text.mcur{fill:var(--ink);font-weight:600}
+.passchip{align-self:flex-start}
 .eyebtn{width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .eyebtn svg{width:17px;height:17px}
 .brand{display:flex;align-items:center;gap:10px}
@@ -378,7 +392,7 @@ const PHONE = !!window.__PHONE__;
 let fresh = false, setup = {step:0}, openSecs = new Set();
 let S = clone(DEFAULTS), E = [], ready = {profile:false, entries:false};
 let db = null, uid = null, profileRef = null, entriesCol = null, downloads = null, canWrite = true;
-let showAmt = false; /* balances start hidden every time the app opens */
+let searchQ = "", showAmt = false; /* balances start hidden every time the app opens */
 let frontCard = ""; try{ frontCard=localStorage.getItem("mm.card")||""; }catch(e){}
 let tab = "home", monthKey = ym(todayStr()), sheet = null, unlocked = "", openCat = "";
 try { unlocked = sessionStorage.getItem("mm.unlock") || ""; } catch (e) {}
@@ -618,8 +632,10 @@ function vEntry(words){
     else if(vHas(str,["project","client","order","logo","design","website","fiverr","upwork","invoice","brandlic","packlic"])) src="Project";
     else if(/\sfrom\s(?!my\s|the\s|a\s)[a-z]/.test(str) && nn) src="Person";
     else if(vHas(str,["salary","refund","profit","bonus"])) src="Other"; }
+  const pass=(type==="Spent"||type==="Received") && vHas(str,["not my money","passing through","pass through","someone else's money","for someone else"]);
   const bare=!nn && !found.length && !vHas(str,Object.values(TYPEW).flat()) && type==="Spent" && (cat==="Other"||!cat) && !forced;
-  return {type,cat,bill,src,from,to,bare,note:nn?nn.charAt(0).toUpperCase()+nn.slice(1):""};
+  const n3=pass?nn.replace(/(^|\s)(not|passing|through|pass|someone|else's|else)(?=\s|$)/gi," ").replace(/\s+/g," ").trim():nn;
+  return {type,cat,bill,src,from,to,bare,pass:!!pass,note:n3?n3.charAt(0).toUpperCase()+n3.slice(1):""};
 }
 function parseSpoken(text){
   let src=String(text||"");
@@ -647,7 +663,7 @@ let voice=null, rec=null;
 function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1); }
 function vLang(){ try{ return localStorage.getItem("mm.vlang")||"ur"; }catch(e){ return "ur"; } }
 function openVoice(listen){ voice={text:"",items:[],listening:false,msg:""}; drawVoice(); if(listen) setTimeout(startRec,150); }
-function vItemRow(e,i){ const what=e.type==="Spent"?e.cat:e.type==="Received"?(e.src?"Money in · "+e.src:"Money in"):e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():"Moved";
+function vItemRow(e,i){ const what=e.pass?"Not my money":e.type==="Spent"?e.cat:e.type==="Received"?(e.src?"Money in · "+e.src:"Money in"):e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():"Moved";
   const sub=[e.date!==todayStr()?shortDate(e.date):"", e.type==="Moved"||e.type==="Car"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
   return `<div class="vrow"><span class="dot ${e.type==="Spent"?"d-out":e.type==="Received"?"d-in":e.type==="Car"?"d-car":"d-mv"}" aria-hidden="true">${e.type==="Spent"?"−":e.type==="Received"?"+":e.type==="Car"?"★":"⇄"}</span><span class="txt"><span class="t1">${esc(what)} · ${rs(e.amount)}</span><span class="t2">${esc(sub)}</span></span><button class="x" data-vedit="${i}" aria-label="Change">✎</button><button class="x" data-vdel="${i}" aria-label="Remove">×</button></div>`; }
 function drawVoice(){
@@ -681,7 +697,7 @@ function stopRec(){ if(!voice) return; voice.listening=false; try{ rec && rec.st
 async function saveVoice(){
   const btn=document.getElementById("vSave"); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   const pasted=String(voice.text).indexOf("•")>=0; let n=0;
-  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:e.type==="Spent"?(e.bill||""):"", src:e.type==="Received"?(e.src||""):"", from:e.from||"", to:(e.type==="Moved"||e.type==="Car")?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
+  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:e.type==="Spent"?(e.bill||""):"", src:e.type==="Received"?(e.src||""):"", pass:!!e.pass, from:e.from||"", to:(e.type==="Moved"||e.type==="Car")?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
     if(pasted){ try{ await navigator.clipboard.writeText(""); }catch(x){} }
     voice=null; drawVoice(); toast("Saved "+n+" entr"+(n===1?"y":"ies")); }
   catch(x){ if(btn){ btn.disabled=false; btn.textContent="Save all"; } document.getElementById("vErr").textContent=writeError(x); }
@@ -711,7 +727,7 @@ function people(){ const P={}; E.forEach(e=>{ if(e.type!=="Lent" && e.type!=="Bo
   P[k]=P[k]||{name:w,net:0}; P[k].net += (e.type==="Lent"?1:-1)*(+e.amount||0); }); return Object.values(P); }
 const ACTS={lend:["I lent money","Lent",1],borrow:["I borrowed money","Borrowed",1],theyPaid:["They paid me back","Lent",-1],iPaid:["I paid them back","Borrowed",-1]};
 function inMonth(k){ return E.filter(e=>ym(e.date)===k); }
-function sumType(list,t){ return list.filter(e=>e.type===t).reduce((s,e)=>s+(+e.amount||0),0); }
+function sumType(list,t){ return list.filter(e=>e.type===t && !e.pass).reduce((s,e)=>s+(+e.amount||0),0); }
 function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim(); }
 function billMatches(bill,e){
   if(e.type!=="Spent") return false;
@@ -795,13 +811,13 @@ function entryRow(e){
     return `<button class="item" data-edit="${esc(e.id)}"><span class="dot d-mv" aria-hidden="true">${out?"↗":"↙"}</span><span class="txt"><span class="t1">${esc(what)}</span><span class="t2">${esc(sub)}</span></span><span class="amt num c-mv">${out?"−":"+"}${rs(Math.abs(a))}</span></button>`; }
   const cls={Spent:"c-out",Received:"c-in",Moved:"c-mv",Car:"c-car"}[e.type];
   const dot={Spent:["d-out","−"],Received:["d-in","+"],Moved:["d-mv","⇄"],Car:["d-car","★"]}[e.type];
-  const what = e.type==="Spent" ? ecats(e).join(" + ") : e.type==="Received" ? (e.note||"Money in") : e.type==="Moved" ? "Moved" : "Saved for "+(S.goal.name||"goal").toLowerCase();
+  const what = e.pass ? (e.type==="Received"?"Not my money · in":"Not my money · out") : e.type==="Spent" ? ecats(e).join(" + ") : e.type==="Received" ? (e.note||"Money in") : e.type==="Moved" ? "Moved" : "Saved for "+(S.goal.name||"goal").toLowerCase();
   const sub = [shortDate(e.date),
     e.type==="Received" && e.src ? e.src : "",
     e.type==="Spent" ? "from "+wallet(e.from||"") : e.type==="Received" ? "into "+wallet(e.from||"") : wallet(e.from||"")+" → "+wallet(e.to||""),
-    (e.type!=="Received" && e.note) ? e.note : ""].filter(Boolean).join(" · ");
+    (e.note && (e.type!=="Received" || e.pass)) ? e.note : ""].filter(Boolean).join(" · ");
   const sign = e.type==="Spent"?"−":e.type==="Received"?"+":"";
-  return `<button class="item" data-edit="${esc(e.id)}"><span class="dot ${dot[0]}" aria-hidden="true">${dot[1]}</span><span class="txt"><span class="t1">${esc(what)}</span><span class="t2">${esc(sub)}</span></span><span class="amt num ${cls}">${sign}${rs(e.amount).replace("−","")}</span></button>`;
+  return `<button class="item" data-edit="${esc(e.id)}"><span class="dot ${dot[0]}" aria-hidden="true">${e.pass?"↔":dot[1]}</span><span class="txt"><span class="t1">${esc(what)}</span><span class="t2">${esc(sub)}</span></span><span class="amt num ${e.pass?"c-mv":cls}">${sign}${rs(e.amount).replace("−","")}</span></button>`;
 }
 function sorted(list){ return list.slice().sort((a,b)=> (b.date>a.date?1:b.date<a.date?-1:(b.created||0)-(a.created||0))); }
 function viewHome(){
@@ -857,30 +873,53 @@ function viewHome(){
 }
 function viewMonth(){
   const k=monthKey, mon=inMonth(k), out=sumType(mon,"Spent"), inn=sumType(mon,"Received"), sv=sumType(mon,"Car");
-  const byCat={}; mon.filter(e=>e.type==="Spent").forEach(e=>{ ecats(e).forEach(c=>{ byCat[c]=(byCat[c]||0)+(+e.amount||0); }); });
+  const byCat={}; mon.filter(e=>e.type==="Spent" && !e.pass).forEach(e=>{ ecats(e).forEach(c=>{ byCat[c]=(byCat[c]||0)+(+e.amount||0); }); });
   const multi=mon.some(e=>e.type==="Spent" && ecats(e).length>1);
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const bills=S.bills.map(x=>[x,billStatus(x,k)]);
   const left=bills.filter(([x,s])=>s.state!=="paid"), still=left.reduce((s,[x])=>s+billAmt(x),0), stillVar=varies(left);
+  const q=searchQ.trim();
+  const last6=[5,4,3,2,1,0].map(i=>addMonths(k,-i)).map(m=>({m,v:sumType(inMonth(m),"Spent")}));
+  const mx=Math.max(1,...last6.map(x=>x.v)), CW=340, CH=120, gap=10, bw=(CW-gap*5)/6;
+  const chart=`<div class="secthead"><h2>Money out, last 6 months</h2></div><section class="card"><svg class="mchart" viewBox="0 0 ${CW} ${CH+22}" role="img" aria-label="Money out in the last 6 months">
+    <line x1="0" x2="${CW}" y1="${CH}" y2="${CH}" class="base"/>
+    ${last6.map((x,i)=>{ const h=x.v?Math.max(4,x.v/mx*(CH-22)):0, X=i*(bw+gap), cur=x.m===k;
+      return `<g data-mjump="${x.m}" style="cursor:pointer"><rect x="${X}" y="0" width="${bw}" height="${CH+22}" fill="transparent"/>${h?`<path d="M${X} ${CH}V${CH-h+4}a4 4 0 0 1 4-4h${bw-8}a4 4 0 0 1 4 4V${CH}z" class="${cur?"cur":"oth"}"/>`:""}
+      ${cur&&x.v?`<text x="${X+bw/2}" y="${CH-h-6}" text-anchor="middle" class="val">${esc(lac(x.v).replace("Rs ",""))}</text>`:""}<text x="${X+bw/2}" y="${CH+16}" text-anchor="middle" class="${cur?"mcur":"mlab"}">${MON[+x.m.slice(5,7)-1].slice(0,3)}</text><title>${monthName(x.m)}: ${rs(x.v)}</title></g>`; }).join("")}
+  </svg><p class="note" style="margin-top:6px">Tap a month to open it. Money that isn't yours is left out.</p></section>`;
   return `
+  <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search all entries" autocomplete="off" value="${esc(searchQ)}" aria-label="Search all entries"></div>
+  <div id="qres">${q?searchHTML(q):""}</div>
+  <div id="mbody" class="mbody" ${q?"hidden":""}>
   ${(()=>{ const se=seasonOf(k); return `<div class="mhead month-nav" style="background:${SEASONS[se][1]}">${seasonDeco(se)}<div class="mrow"><button data-mon="-1" aria-label="Previous month">‹</button><div><h2 class="mt">${monthName(k)}</h2><p class="ms">${SEASONS[se][0]}</p></div><button data-mon="1" aria-label="Next month">›</button></div></div>`; })()}
   <div class="grid2">
     <div class="card soft-in"><p class="lab">Money in</p><p class="val num c-in">${rs(inn)}</p></div>
     <div class="card soft-out"><p class="lab">Money out</p><p class="val num c-out">${rs(out)}</p></div>
   </div>
+  ${chart}
   <div class="card" style="background:var(--car-soft)"><div class="row"><p class="lab" style="color:var(--ink)">Saved for ${esc((S.goal.name||"goal").toLowerCase())} this month</p><p class="val num c-car" style="margin:0">${rs(sv)}</p></div></div>
-  ${(()=>{ const r=mon.filter(e=>e.type==="Received"); if(!r.length) return ""; const g={}; r.forEach(e=>{ const k=e.src||"Not set"; g[k]=(g[k]||0)+(+e.amount||0); });
+  ${(()=>{ const r=mon.filter(e=>e.type==="Received" && !e.pass); if(!r.length) return ""; const g={}; r.forEach(e=>{ const k=e.src||"Not set"; g[k]=(g[k]||0)+(+e.amount||0); });
     return `<div class="secthead"><h2>Where it came from</h2></div><section class="card" style="padding-block:6px">${Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="catrow" style="cursor:default"><span style="font-weight:600">${esc(k)}</span><span class="num c-in" style="font-weight:700">${rs(v)} <span class="muted small">${Math.round(inn?v/inn*100:0)}%</span></span><span class="bar"><i style="width:${Math.max(inn?v/inn*100:0,2)}%;background:var(--money)"></i></span></div>`).join("")}</section>`; })()}
   <div class="secthead"><h2>Where it went</h2>${cats.length?`<span class="small muted">Tap one to see its entries</span>`:""}</div>${multi?`<p class="note" style="margin-top:-4px">Entries with two or more categories show under each one, so these can add up to more than Money out. Money out counts them once.</p>`:""}
   <section class="card" style="padding-block:6px">${cats.length?cats.map(([c,v],ci)=>{ const lim=+(S.limits[c]||0); const w=out?v/out*100:0; const open=openCat===c;
-    const items=open?sorted(mon.filter(e=>e.type==="Spent" && hasCat(e,c))):[];
+    const items=open?sorted(mon.filter(e=>e.type==="Spent" && !e.pass && hasCat(e,c))):[];
     return `<button class="catrow" data-opencat="${esc(c)}" aria-expanded="${open}"><span style="font-weight:600">${open?"▾":"▸"} ${esc(c)}${lim?` <span class="pill ${v>lim?"p-late":v>=0.8*lim?"p-due":"p-ok"}">${v>lim?"Over limit":v>=0.8*lim?"Almost":"OK"} · ${rs(lim)}</span>`:""}</span><span class="num" style="font-weight:700">${rs(v)} <span class="muted small">${Math.round(w)}%</span></span><span class="bar"><i style="width:${Math.max(w,2)}%;background:${CATC[ci%CATC.length]}"></i></span></button>
     ${open?`<div class="catlist"><p class="small muted">${items.length} entr${items.length===1?"y":"ies"} in ${esc(c)}</p><div class="list">${items.map(entryRow).join("")}</div></div>`:""}`;}).join(""):`<p class="empty">No spending in ${monthName(k)}.</p>`}</section>
   ${S.bills.length?`<div class="secthead"><h2>Bills</h2><span class="small muted">Still to pay <b class="num c-out">${rs(still)}</b>${stillVar?" + bills that change":""}</span></div>
   <section class="card" style="padding-block:4px"><div class="list">${bills.map(([x,s])=>`<div class="item" style="cursor:default"><span class="txt"><span class="t1">${esc(x.name)}</span><span class="t2">${billAmt(x)?rs(x.amount):"Amount changes every month"}${s.paid&&!billAmt(x)?" · paid "+rs(s.paid):""}${x.day?" · due day "+esc(x.day):""}</span></span><span style="display:flex;gap:6px;align-items:center"><span class="pill ${s.state==="paid"?"p-ok":s.state==="late"?"p-late":"p-due"}">${esc(s.label)}</span>${s.state!=="paid"?`<button class="paybtn" data-pay="${S.bills.indexOf(x)}">Mark paid</button>`:""}</span></div>`).join("")}</div></section>
   <p class="note">A bill counts as paid when you tap Mark paid, or when you add a Spent entry and pick the bill under “Which bill is this?”. The app also spots it by itself when the note has the bill's name (like “electricity”), or when it's the only bill in that category and the amount is close (like Rent).</p>`:""}
   <h2>All entries</h2>
-  <section class="card" style="padding-block:4px">${mon.length?`<div class="list">${sorted(mon).map(entryRow).join("")}</div>`:`<p class="empty">No entries in ${monthName(k)}.</p>`}</section>`;
+  <section class="card" style="padding-block:4px">${mon.length?`<div class="list">${sorted(mon).map(entryRow).join("")}</div>`:`<p class="empty">No entries in ${monthName(k)}.</p>`}</section>
+  </div>`;
+}
+function searchHTML(q){
+  const toks=q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hay=e=>[e.note,e.who,e.src,e.bill&&e.bill!=="-"?e.bill:"",e.type==="Car"?(S.goal.name||"goal"):e.type,e.pass?"not my money":"",...(e.type==="Spent"?ecats(e):[]),wallet(e.from||""),wallet(e.to||""),
+    String(Math.abs(+e.amount||0)),rs(Math.abs(+e.amount||0)),shortDate(e.date),monthName(ym(e.date))].join(" ").toLowerCase();
+  const res=sorted(E.filter(e=>{ const h=hay(e); return toks.every(t=>h.includes(t)); }));
+  if(!res.length) return `<p class="empty">Nothing found for “${esc(q)}”.</p>`;
+  const out=sumType(res,"Spent"), inn=sumType(res,"Received");
+  return `<p class="note" style="margin:2px 2px 8px">${res.length} entr${res.length===1?"y":"ies"}${out?" · out "+rs(out):""}${inn?" · in "+rs(inn):""}</p><section class="card group"><div class="list">${res.slice(0,150).map(entryRow).join("")}</div></section>${res.length>150?`<p class="note">Showing the latest 150. Add more words to narrow it down.</p>`:""}`;
 }
 function viewCar(){
   const cf=carFund(), price=+S.goal.price||0, need=Math.max(0,price-cf), pct=price?Math.min(100,cf/price*100):0;
@@ -970,6 +1009,9 @@ function viewSettings(){
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
     <li><b>Bills:</b> tap Mark paid, or pick the bill when you add a Spent. You can change the amount before saving, so bills that change each month still work.</li>
     <li><b>Bank fees:</b> when you add a Subscription or an Online & card payment, the app fills in the bank fee (1% + Rs 100 + Rs 16 tax) and saves it as its own Bank fees entry. Change it or clear it if it was different.</li>
+    <li><b>Not my money:</b> when money only passes through you (someone sends it and you forward it), tap <b>Not my money</b> on Spent or Received. Your balance stays right, but it isn't counted as your income or spending.</li>
+    <li><b>Search:</b> on Month, type a name, amount, category or month in the search box to find any entry from any month.</li>
+    <li><b>Chart:</b> Month shows your money out for the last 6 months. Tap a month to open it.</li>
     <li><b>Two categories:</b> on Spent you can tap more than one category, like Foodpanda and Family. The entry shows under both in Month, but Money out counts it once.</li>
     <li><b>Received:</b> pick where it came from (Person, Project, Family or Other) and the name. Names you used before show up so you can tap them.</li>
     <li><b>Not sure what a payment was?</b> Put it in <b>Unknown / check later</b>. It shows on Home until you change it. If your bank balance is lower than the app and you can't find why, add the gap as <b>Untracked money</b>.</li>
@@ -1097,6 +1139,7 @@ function drawSheet(){
     ${t==="Received"?`<div class="field"><span class="flab">Where it came from</span><div class="chips">${SRCS.map(x=>`<button type="button" class="chip" data-src="${x}" aria-pressed="${e.src===x}">${x}</button>`).join("")}</div></div>`:""}
     <div class="field"><label for="note">${t==="Received"?(e.src==="Project"?"Which project / client":e.src==="Family"?"Who in the family":e.src==="Person"?"Who":"From who / what"):"Note (optional)"}</label><input id="note" autocomplete="off" placeholder="${t==="Received"?"Mark, logo project":t==="Spent"?"electricity":t==="People"?"what it was for":"atm"}" value="${esc(e.note)}">${t==="Received" && recentSources().length?`<div class="chips" style="margin-top:6px">${recentSources().map(x=>`<button type="button" class="chip" data-rname="${esc(x.name)}" data-rsrc="${esc(x.src)}" aria-pressed="${String(e.note||"").toLowerCase()===x.name.toLowerCase()}">${esc(x.name)}</button>`).join("")}</div>`:""}</div>
     ${t==="Spent" && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee?`<div class="field"><label for="fee">Bank fee (saved as its own entry)</label><input id="fee" class="num" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(e.feeTxt!=null?e.feeTxt:(cardFee(parseAmount(e.amount))||""))}"><p class="small muted" style="margin-top:4px">Worked out as 1% + Rs 100 + Rs 16 tax. If your bank charged something else, change it. Clear it if there was no fee.</p></div>`:""}
+    ${t==="Spent"||t==="Received"?`<button type="button" class="chip passchip" data-pass="1" aria-pressed="${!!e.pass}">${e.pass?"✓ ":""}Not my money (just passing through)</button>${e.pass?`<p class="note" style="margin-top:-6px">Changes your ${esc(wallet(e.from||({Spent:S.defaults.spent,Received:S.defaults.received}[t])))} balance, but isn't counted as your income or spending.</p>`:""}`:""}
     <div class="field"><label for="date">Date</label><input type="date" id="date" value="${esc(e.date)}"></div>
     <button class="primary" id="saveBtn">${sheet.editing?"Save changes":"Save"}</button>
     ${sheet.editing?`<button class="ghost danger" id="delBtn">${sheet.confirmDel?"Tap again to delete":"Delete entry"}</button>`:""}
@@ -1125,7 +1168,7 @@ async function saveSheet(){
   if((t==="Moved"||(t==="Car" && amt>0)) && from===to){ err.textContent="From and To can't be the same account"; return; }
   let fee=0; if(t==="Spent" && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee && String(e.feeNow||"").trim()){ fee=parseAmount(e.feeNow); if(!isFinite(fee)||fee<0){ err.textContent="Type the bank fee, like 127, or clear it"; return; } }
   const cl=t==="Spent"?((e.cats||[]).length?e.cats.slice():["Other"]):[];
-  const doc={type:t, amount:amt, date:e.date||todayStr(), cat:t==="Spent"?cl[0]:"", cats:t==="Spent"&&cl.length>1?cl:[], bill:t==="Spent"?(e.bill||""):"", src:t==="Received"?(e.src||""):"", from, to:to||"", note:String(e.note||"").trim(),
+  const doc={type:t, amount:amt, date:e.date||todayStr(), pass:(t==="Spent"||t==="Received")&&!!e.pass, cat:t==="Spent"?cl[0]:"", cats:t==="Spent"&&cl.length>1?cl:[], bill:t==="Spent"?(e.bill||""):"", src:t==="Received"?(e.src||""):"", from, to:to||"", note:String(e.note||"").trim(),
     before: !!(sheet.editing && e.before), created: sheet.editing ? (e.created||Date.now()) : Date.now()};
   const btn=document.getElementById("saveBtn"); btn.disabled=true; btn.textContent="Saving…";
   try{
@@ -1185,7 +1228,7 @@ async function downloadExcel(){
     catch(x){ toast("Excel tool didn't load. Check your internet."); return; } }
   if(!downloads){ toast("Downloads aren't available here."); return; }
   const wb=XLSX.utils.book_new();
-  const rows=sorted(E).reverse().map(e=>({Date:e.date, "What happened":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():e.type==="Lent"?(e.amount>0?"Lent":"Paid back to me"):e.type==="Borrowed"?(e.amount>0?"Borrowed":"I paid back"):e.type, Amount:Math.abs(+e.amount), Person:e.who||"", "Came from":e.src||"", Category:e.type==="Spent"?ecats(e).join(" + "):"", From:e.from||"", To:e.to||"", Note:e.note||"", Bill:e.bill&&e.bill!=="-"?e.bill:"", "Before tracking":e.before?"Yes":""}));
+  const rows=sorted(E).reverse().map(e=>({Date:e.date, "What happened":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():e.type==="Lent"?(e.amount>0?"Lent":"Paid back to me"):e.type==="Borrowed"?(e.amount>0?"Borrowed":"I paid back"):e.type, Amount:Math.abs(+e.amount), Person:e.who||"", "Came from":e.src||"", "Not my money":e.pass?"Yes":"", Category:e.type==="Spent"?ecats(e).join(" + "):"", From:e.from||"", To:e.to||"", Note:e.note||"", Bill:e.bill&&e.bill!=="-"?e.bill:"", "Before tracking":e.before?"Yes":""}));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Entries");
   const months=[...new Set(E.map(e=>ym(e.date)))].sort().map(k=>{ const m=inMonth(k); const i=sumType(m,"Received"), o=sumType(m,"Spent"), s=sumType(m,"Car"); return {Month:monthName(k), "Money in":i, "Money out":o, "Saved for goal":s, "In - out - saved":i-o-s}; });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(months), "Months");
@@ -1203,8 +1246,10 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
+  if(t.dataset.mjump){ monthKey=t.dataset.mjump; render(); return; }
+  if(t.dataset.pass){ readSheetInputs(); sheet.e.pass=!sheet.e.pass; drawSheet(); return; }
   if(t.id==="eyeBtn"){ showAmt=!showAmt; render(); return; }
   if(t.dataset.card!==undefined){ const c=t.dataset.card; const btns=[...document.querySelectorAll(".wc")]; const isFront=btns.length && btns[btns.length-1]===t;
     if(isFront){ if(c==="__goal"){ tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); } return; }
@@ -1275,6 +1320,7 @@ async function addBillsFile(f){
   try{ await profileRef.set(N); S=N; openSecs.add("bills"); render(); toast("Added "+n+" bill"+(n===1?"":"s")+". Check them below."); }
   catch(x){ toast(writeError(x)); }
 }
+document.addEventListener("input", ev=>{ if(ev.target.id!=="q") return; searchQ=ev.target.value; const q=searchQ.trim(), r=document.getElementById("qres"), b=document.getElementById("mbody"); if(r) r.innerHTML=q?searchHTML(q):""; if(b) b.hidden=!!q; });
 document.addEventListener("change", ev=>{ if(ev.target.id==="billsf" && ev.target.files && ev.target.files[0]){ addBillsFile(ev.target.files[0]); ev.target.value=""; return; } if(ev.target.id==="rsf" && ev.target.files && ev.target.files[0]){ restoreBackup(ev.target.files[0]); ev.target.value=""; } });
 document.addEventListener("input", ev=>{ if(ev.target.id==="amt"){ const e=document.getElementById("amtErr"); if(e) e.textContent=""; } });
 document.addEventListener("keydown", ev=>{ if(ev.key==="Escape" && voice){ stopRec(); voice=null; drawVoice(); } if(ev.key==="Escape" && sheet){ sheet=null; drawSheet(); } if(ev.key==="Enter" && sheet && ev.target.tagName==="INPUT"){ ev.preventDefault(); saveSheet(); } if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("su-")){ ev.preventDefault(); setupAction(setup.step===3?"finish":"next"); } });
