@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.12 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.13 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -258,6 +258,93 @@ button.wcard{cursor:pointer}
 .ghost{border-radius:16px}
 input,select{border-radius:13px}
 .seg button{border-radius:13px}
+
+/* ---- 1.13 Wallet style: plain background, colour only on the account cards ---- */
+:root{--bg:#F2F2F7;--surface:#FFFFFF;--ink:#111111;--muted:#8A8A8E;--line:rgba(60,60,67,.14);
+  --money:#2E7D4F;--money-soft:#F2F2F7;--out:#111111;--out-soft:#F2F2F7;--car:#1F4D3A;--car-soft:#F2F2F7;
+  --warn:#8A5A00;--warn-soft:#FFF6E0;--chip:#F2F2F7;--mv-soft:#F2F2F7;--late:#C0392B;--tabbar:rgba(249,249,251,.86);
+  --shade:rgba(0,0,0,.35);--lift:0 1px 2px rgba(0,0,0,.06),0 10px 24px -14px rgba(0,0,0,.35);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;--r:14px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#000000;--surface:#1C1C1E;--ink:#F5F5F7;--muted:#8E8E93;--line:rgba(255,255,255,.10);
+  --money:#5FC28A;--money-soft:#2C2C2E;--out:#F5F5F7;--out-soft:#2C2C2E;--car:#7FB89A;--car-soft:#2C2C2E;--warn:#F2C35A;--warn-soft:#2A2312;--chip:#2C2C2E;--mv-soft:#2C2C2E;--late:#FF7A6B;
+  --tabbar:rgba(18,18,20,.86);--shade:rgba(0,0,0,.6);--lift:0 1px 2px rgba(0,0,0,.4),0 10px 24px -14px rgba(0,0,0,.8)}}
+:root[data-theme="dark"]{--bg:#000000;--surface:#1C1C1E;--ink:#F5F5F7;--muted:#8E8E93;--line:rgba(255,255,255,.10);
+  --money:#5FC28A;--money-soft:#2C2C2E;--out:#F5F5F7;--out-soft:#2C2C2E;--car:#7FB89A;--car-soft:#2C2C2E;--warn:#F2C35A;--warn-soft:#2A2312;--chip:#2C2C2E;--mv-soft:#2C2C2E;--late:#FF7A6B;
+  --tabbar:rgba(18,18,20,.86);--shade:rgba(0,0,0,.6);--lift:0 1px 2px rgba(0,0,0,.4),0 10px 24px -14px rgba(0,0,0,.8)}
+html,body{font-family:var(--font);letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+.wrap{padding-block:12px 110px;gap:12px}
+h2{font-size:20px;font-weight:700;letter-spacing:-.015em}
+.card{border:0;border-radius:var(--r);box-shadow:none}
+.lab{font-size:13px;font-weight:500;color:var(--muted)}
+.val{font-weight:600;letter-spacing:-.02em}
+.c-out,.c-car,.c-mv{color:var(--ink)} .c-in{color:var(--money)}
+.dot{width:32px;height:32px;border-radius:50%;font-size:15px;font-weight:600;background:var(--bg) !important;color:var(--ink) !important}
+.card .dot,.list .dot{background:var(--bg) !important}
+.item{padding:11px 0;border-bottom:.5px solid var(--line)}
+.item .t1{font-weight:500;font-size:16px}.item .t2{font-size:13px}.item .amt{font-weight:500;font-size:16px}
+.pill{font-weight:600;background:var(--bg) !important}
+.p-ok{color:var(--money)} .p-due{color:var(--muted)} .p-late{color:var(--late)}
+.linkbtn{color:var(--car);font-weight:500;font-size:15px}
+.primary{background:var(--ink);color:var(--bg);border-radius:12px;font-weight:600}
+.ghost{background:var(--surface);border:0;border-radius:12px;font-weight:500;color:var(--ink)}
+.danger{color:var(--late)} .err{color:var(--late)}
+input,select,#vtext{border:0;background:var(--surface);border-radius:10px;font-family:var(--font)}
+.panel input,.panel select,.panel #vtext{background:var(--surface)}
+.chip{border:0;background:var(--surface);font-weight:500}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg{background:var(--chip);border-radius:10px;padding:2px;gap:2px}
+.seg button{border:0 !important;background:none;border-radius:8px !important;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface) !important;color:var(--ink) !important;box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.panel{background:var(--bg)}
+.voicebtn{background:var(--ink);color:var(--bg);border-radius:12px;box-shadow:none;font-weight:600;padding:14px}
+.mic{background:var(--ink);color:var(--bg);box-shadow:none}
+.mic.on{background:var(--late);color:#fff}
+.micnote{font-weight:500}
+.soft-in,.soft-out{background:var(--surface)}
+.warnbox{background:var(--warn-soft)}
+.catrow .bar,.bar{background:var(--chip);height:5px}
+.catrow .bar>i{background:var(--ink) !important;opacity:.75}
+.catlist{background:var(--bg)}
+.mhead{background:none !important;color:var(--ink);box-shadow:none;padding:4px 0}
+.mhead .deco{display:none}
+.mhead .mt{color:var(--ink);font-size:24px;font-weight:700}.mhead .ms{display:none}
+.mhead button{background:var(--surface);color:var(--ink)}
+.carhero{background:linear-gradient(160deg,#2C5E48,#1F4D3A);border-radius:var(--r);box-shadow:var(--lift)}
+.act{background:var(--surface);border-radius:12px}
+.sect summary{font-weight:600}
+.setup .steps i.on{background:var(--ink)}
+.tabs{left:0;right:0;bottom:0;max-width:none;border-radius:0;background:var(--tabbar);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-top:.5px solid var(--line);padding:6px 10px calc(4px + env(safe-area-inset-bottom,0px))}
+.tabs .in{grid-template-columns:repeat(4,1fr);max-width:520px}
+.tab{color:var(--muted);background:none !important;font-weight:500;font-size:10.5px;gap:3px}
+.tab svg{stroke-width:1.6}
+.tab[aria-current="page"]{color:var(--ink);background:none}
+.toast{bottom:calc(76px + env(safe-area-inset-bottom,0px));border-radius:12px;font-weight:500}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tabs{border:0;border-top:.5px solid var(--line)}}
+:root[data-theme="dark"] .tabs{border:0;border-top:.5px solid var(--line)}
+/* home */
+.htop{display:flex;justify-content:space-between;align-items:flex-end;padding-top:max(8px,env(safe-area-inset-top,0px))}
+.htop h1{font-size:34px;font-weight:700;letter-spacing:-.025em;color:var(--ink)}
+.htop .plusbtn{width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);font:400 24px/1 var(--font);display:grid;place-items:center;cursor:pointer;margin-bottom:4px}
+.hdate{color:var(--muted);font-size:15px;margin-top:-8px}
+.htotal{padding:10px 0 2px}
+.htotal .big{font-size:42px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+.htotal .big small,.wc .amt small{font-size:.5em;font-weight:500;color:var(--muted);margin-right:4px}
+.wstack{position:relative}
+.wc{position:absolute;left:0;right:0;height:206px;border:0;border-radius:14px;padding:15px 18px;color:#fff;text-align:left;font:inherit;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--lift);transition:top .25s ease}
+.wc .r{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:600;gap:10px}
+.wc .r span:last-child{font-variant-numeric:tabular-nums}
+.wc .r .dim{opacity:.7;font-weight:500;font-size:13px}
+.wc .amt{font-size:34px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.wc .amt small{color:rgba(255,255,255,.7)}
+.wc .foot{font-size:12.5px;opacity:.75;margin-top:4px}
+.wc .prog{display:block;height:3px;border-radius:2px;background:rgba(255,255,255,.22);margin-top:10px;overflow:hidden}
+.wc .prog i{display:block;height:100%;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;padding:0}
+.two>div{padding:12px 14px}.two>div+div{border-left:.5px solid var(--line)}
+.two .v{font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.group{padding:2px 14px}
+.eyebtn{width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.eyebtn svg{width:17px;height:17px}
 </style>
 
 <div class="wrap" id="app">
@@ -284,6 +371,8 @@ const PHONE = !!window.__PHONE__;
 let fresh = false, setup = {step:0}, openSecs = new Set();
 let S = clone(DEFAULTS), E = [], ready = {profile:false, entries:false};
 let db = null, uid = null, profileRef = null, entriesCol = null, downloads = null, canWrite = true;
+let showAmt = false; /* balances start hidden every time the app opens */
+let frontCard = ""; try{ frontCard=localStorage.getItem("mm.card")||""; }catch(e){}
 let tab = "home", monthKey = ym(todayStr()), sheet = null, unlocked = "", openCat = "";
 try { unlocked = sessionStorage.getItem("mm.unlock") || ""; } catch (e) {}
 try { const t = localStorage.getItem("mm.tab"); if (t) tab = t; } catch (e) {}
@@ -590,6 +679,7 @@ async function saveVoice(){
     voice=null; drawVoice(); toast("Saved "+n+" entr"+(n===1?"y":"ies")); }
   catch(x){ if(btn){ btn.disabled=false; btn.textContent="Save all"; } document.getElementById("vErr").textContent=writeError(x); }
 }
+document.addEventListener("visibilitychange",()=>{ if(document.hidden && showAmt){ showAmt=false; if(tab==="home" && !sheet && !voice) setTimeout(render,0); } });
 document.addEventListener("visibilitychange",()=>{ if(document.hidden && voice && voice.listening){ stopRec(); voice.msg="The mic stops when you leave My Money. To speak over your bank app, use Voice Memos (Settings ▸ How to use)."; } });
 function lac(n){ return n>=100000 ? (Math.round(n/10000)/10).toString().replace(/\.0$/,"")+" lac" : rs(n); }
 const CARDC=[["var(--cob)","#fff"],["var(--mango)","#2A1A00"],["var(--coral)","#fff"],["var(--mint)","#fff"],["var(--pinkc)","#fff"]];
@@ -669,7 +759,7 @@ const ICON={
   settings:'<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>'
 };
 function renderTabs(){
-  const T=[["home","Home"],["month","Month"],["+",""],["car",S.goal.name||"Goal"],["settings","Settings"]];
+  const T=[["home","Home"],["month","Month"],["car",S.goal.name||"Goal"],["settings","Settings"]];
   document.getElementById("tabs").innerHTML=T.map(([k,l])=> k==="+" ? `<button class="tab plus" data-add="Spent" aria-label="Add an entry"><span aria-hidden="true">+</span></button>`
     : `<button class="tab" data-tab="${k}" ${tab===k?'aria-current="page"':""}>${ICON[k]}${esc(l)}</button>`).join("");
 }
@@ -719,42 +809,41 @@ function viewHome(){
   const gb=b[S.goal.account]||0;
   if(cf>0 && gb < cf-0.5) warns.push(`${esc(S.goal.account)} has ${rs(gb)}, but your ${esc((S.goal.name||"goal").toLowerCase())} fund is ${rs(cf)}. ${rs(cf-gb)} of ${esc((S.goal.name||"goal").toLowerCase())} money was used. If you took it out on purpose, add a ${esc(S.goal.name||"goal")} entry with a minus amount, like -${Math.round(cf-gb)}.`);
   Object.entries(b).forEach(([n,v])=>{ if(v< -0.5) warns.push(`${esc(wallet(n))} is below zero (${rs(v)}). An entry may be missing or in the wrong account. You can also fix it in Settings with a correction.`); });
+  const WCOL=["linear-gradient(160deg,#2F3833,#1C2320)","linear-gradient(160deg,#B49A78,#97805F)","linear-gradient(160deg,#3B4A5A,#2A3541)","linear-gradient(160deg,#8A5A44,#6E4636)","linear-gradient(160deg,#5E6B52,#47523D)"];
+  const cards=daily.map((a,i)=>({k:a.name, name:wallet(a.name), sub:a.name.toLowerCase()==="cash"?"Cash":"", amt:b[a.name]||0, bg:a.name.toLowerCase()==="cash"?WCOL[1]:WCOL[i===0?0:(i+1)%WCOL.length]}));
+  cards.push({k:"__goal", name:(S.goal.name||"Goal")+" fund", sub:S.goal.account, amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
+  const def=acctNames().includes(S.defaults.spent)?S.defaults.spent:(cards[0]&&cards[0].k);
+  const front=cards.some(c=>c.k===frontCard)?frontCard:def;
+  const order=cards.filter(c=>c.k!==front).concat(cards.filter(c=>c.k===front));
+  const STRIP=48, H=206, stackH=STRIP*(order.length-1)+H;
+  const money=v=>rs(v).replace("Rs ","");
+  const hid=v=>showAmt?money(v):"••••••";
+  const EYE=showAmt?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'
+    :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2.1 0 3.9.7 5.4 1.7M22 12s-3.5 7-10 7c-2.1 0-3.9-.7-5.4-1.7"/><path d="M3 3l18 18"/></svg>';
   return `
-  ${(()=>{ const sk=skyNow(); return `<section class="skyhero" aria-label="Money I have"><div class="skybg" style="background:${sk.bg}"></div>${sk.art}
-    <p class="when">${esc(new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))}${sk.label?" · "+sk.label:""}</p>
-    <div class="gpanel"><p style="font-weight:600;opacity:.92">Money I have</p><p class="big num">${rs(have)}</p>
-      <div class="gchips">${daily.map(a=>`<span>${esc(wallet(a.name))} <b class="num">${rs(b[a.name]).replace("Rs ","")}</b></span>`).join("")}</div>
-      <p class="sub">${goalExtra>0?rs(goalExtra)+" extra in "+esc(S.goal.account)+" counted too. ":""}The ${esc((S.goal.name||"goal").toLowerCase())} fund is kept separate.</p></div>
-  </section>`; })()}
-  <div class="homesheet">
+  <div class="htop"><h1>My Money</h1><button class="plusbtn" data-add="Spent" aria-label="Add an entry">+</button></div>
+  <p class="hdate">${esc(new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))}</p>
+  <div class="htotal"><p class="lab" style="display:flex;align-items:center;gap:8px">Money I have <button class="eyebtn" id="eyeBtn" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</button></p><p class="big"><small>Rs</small>${hid(have)}</p></div>
+  <div class="wstack" style="height:${stackH}px">${order.map((c,i)=>{ const isF=i===order.length-1;
+    return `<button class="wc" data-card="${esc(c.k)}" style="top:${i*STRIP}px;background:${c.bg}" aria-label="${esc(c.name)}">
+      <span class="r"><span>${esc(c.name)}${c.goal&&!isF?` <span class="dim">· ${esc(c.sub)}</span>`:""}</span>${isF?`<span class="dim">${esc(c.goal?c.sub:c.sub)}</span>`:`<span>${hid(c.amt)}</span>`}</span>
+      ${isF?`<span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to see the plan</span>`:`<span class="foot" style="display:block">Tap a card above to switch</span>`}</span>`:""}
+    </button>`; }).join("")}</div>
   ${warns.map(w=>`<div class="card warnbox" role="alert"><b>Check this</b><p>${w}</p></div>`).join("")}
-
-
-  ${PHONE && !standalone() ?`<section class="card" style="background:var(--mv-soft)"><b>Put My Money on your home screen</b><p class="small" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
-
-  <button class="goaltile" data-tab="car" aria-label="${esc(S.goal.name)} fund"><span class="n"><span>${esc(S.goal.name||"Goal")} fund · ${esc(S.goal.account)}</span><span>${pct.toFixed(1)}% of ${lac(price)}</span></span><span class="amt num">${rs(cf)}</span><span class="grownote">${esc(growNote(pct))}</span>${treeSVG(pct)}</button>
+  ${PHONE && !standalone() ?`<section class="card"><b>Put My Money on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
   <button class="voicebtn" data-voice="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak or paste</button>
-  <div class="acts">
-    <button class="act" data-add="Spent"><span class="dot d-out" aria-hidden="true">−</span>Spent</button>
-    <button class="act" data-add="Received"><span class="dot d-in" aria-hidden="true">+</span>Received</button>
-    <button class="act" data-add="Moved"><span class="dot d-mv" aria-hidden="true">⇄</span>Moved</button>
-    <button class="act" data-add="Car"><span class="dot d-car" aria-hidden="true">★</span>${esc(S.goal.name||"Goal")}</button>
-  </div>
-  <div class="grid2">
-    <div class="card soft-in"><p class="lab">In this month</p><p class="val num c-in">${rs(sumType(mon,"Received"))}</p></div>
-    <div class="card soft-out"><p class="lab">Out this month</p><p class="val num c-out">${rs(sumType(mon,"Spent"))}</p></div>
-  </div>
-  ${S.bills.length?`<section class="card" data-tab="month" style="cursor:pointer"><div class="row"><span><span class="lab" style="display:block;color:var(--ink);font-size:15px">Bills this month</span>${unpaid.length?`<span class="small muted">${unpaidSum?rs(unpaidSum):""}${unpaidVar?(unpaidSum?" + ":"")+"bills that change":""}</span>`:""}</span>${unpaid.length?`<span class="pill p-due">${unpaid.length} to pay</span>`:`<span class="pill p-ok">All paid</span>`}</div></section>`:""}
+  <div class="secthead"><h2>${esc(MON[+k.slice(5,7)-1])}</h2><button class="linkbtn" data-tab="month">See month</button></div>
+  <section class="card two"><div><p class="lab">Money in</p><p class="v">${money(sumType(mon,"Received"))}</p></div><div><p class="lab">Money out</p><p class="v">${money(sumType(mon,"Spent"))}</p></div></section>
+  ${S.bills.length?`<section class="card" data-tab="month" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">Bills this month</span>${unpaid.length?`<span class="small muted">${unpaidSum?rs(unpaidSum):""}${unpaidVar?(unpaidSum?" + ":"")+"bills that change":""}</span>`:""}</span>${unpaid.length?`<span class="pill p-due">${unpaid.length} to pay</span>`:`<span class="pill p-ok">All paid</span>`}</div></section>`:""}
   ${(()=>{ const P=people().filter(x=>Math.abs(x.net)>=0.5); if(!P.length) return "";
     const owed=P.filter(x=>x.net>0).reduce((s,x)=>s+x.net,0), owe=P.filter(x=>x.net<0).reduce((s,x)=>s-x.net,0);
-    return `<section class="card" style="padding-block:10px 4px"><div class="row"><span><span class="lab" style="display:block;color:var(--ink);font-size:15px">People</span><span class="small muted">${owed?"They owe you "+rs(owed):""}${owed&&owe?" · ":""}${owe?"You owe "+rs(owe):""}</span></span><button class="linkbtn" data-add="People">+ Add</button></div>
+    return `<section class="card" style="padding-block:10px 4px"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">People</span><span class="small muted">${owed?"They owe you "+rs(owed):""}${owed&&owe?" · ":""}${owe?"You owe "+rs(owe):""}</span></span><button class="linkbtn" data-add="People">+ Add</button></div>
     <div class="list">${P.map(x=>`<div class="item" style="cursor:default"><span class="dot d-mv" aria-hidden="true">${x.net>0?"↗":"↙"}</span><span class="txt"><span class="t1">${x.net>0?esc(x.name)+" owes you":"You owe "+esc(x.name)}</span><span class="t2">${rs(Math.abs(x.net))}</span></span><button class="paybtn" data-payback="${esc(x.name)}">Paid back</button></div>`).join("")}</div></section>`; })()}
   ${(()=>{ const c=checkCat(); if(!c) return ""; const l=E.filter(e=>e.type==="Spent" && hasCat(e,c)); if(!l.length) return "";
-    return `<section class="card" data-checklater="1" style="cursor:pointer;background:var(--mv-soft)"><div class="row"><span><span class="lab" style="display:block;color:var(--ink);font-size:15px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
-  <div class="secthead"><h2>Recent</h2>${E.length>8?`<button class="linkbtn" data-tab="month">See this month</button>`:""}</div>
-  <section class="card" style="padding-block:4px">${E.length?`<div class="list">${sorted(E).slice(0,8).map(entryRow).join("")}</div>`:`<p class="empty">Nothing added yet. Tap Spent or Received above to add your first entry.</p>`}</section>
-  <p class="note">Tap any entry to change or delete it.</p>
-  </div>`;
+    return `<section class="card" data-checklater="1" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
+  <div class="secthead"><h2>Latest</h2>${E.length>8?`<button class="linkbtn" data-tab="month">See all</button>`:""}</div>
+  <section class="card group">${E.length?`<div class="list">${sorted(E).slice(0,8).map(entryRow).join("")}</div>`:`<p class="empty">Nothing added yet. Tap + at the top to add your first entry.</p>`}</section>
+  <p class="note">Tap any entry to change or delete it.</p>`;
 }
 function viewMonth(){
   const k=monthKey, mon=inMonth(k), out=sumType(mon,"Spent"), inn=sumType(mon,"Received"), sv=sumType(mon,"Car");
@@ -1104,8 +1193,12 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
+  if(t.id==="eyeBtn"){ showAmt=!showAmt; render(); return; }
+  if(t.dataset.card!==undefined){ const c=t.dataset.card; const btns=[...document.querySelectorAll(".wc")]; const isFront=btns.length && btns[btns.length-1]===t;
+    if(isFront){ if(c==="__goal"){ tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); } return; }
+    frontCard=c; try{localStorage.setItem("mm.card",c);}catch(e){} render(); return; }
   if(t.id==="faceBtn"){ faceUnlock(); return; }
   if(t.id==="faceOn"){ faceSetup(); return; }
   if(t.id==="faceOff"){ try{ localStorage.removeItem("mm.faceid"); }catch(e){} render(); toast("Face ID is off. Use your PIN."); return; }
