@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.32 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.33 (27 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -820,8 +820,7 @@ function balances(){
   E.forEach(e=>{ if(e.before) return; const a=+e.amount||0;
     if(e.type==="Spent"){ if(e.from in b) b[e.from]-=a; }
     else if(e.type==="Received"){ if(e.from in b) b[e.from]+=a; }
-    else if(e.type==="Lent"){ if(e.from in b) b[e.from]-=a; }
-    else if(e.type==="Borrowed"){ if(e.from in b) b[e.from]+=a; }
+    else if(e.type==="Lent"||e.type==="Borrowed"){ /* People records only keep track of who owes whom; they never change account balances */ }
     else if(e.type==="Car" && a<0){ /* taking money out of the fund: the money stays where it is */ }
     else { if(e.from in b) b[e.from]-=a; if(e.to in b) b[e.to]+=a; } });
   return b;
@@ -931,7 +930,7 @@ function render(){
 function entryRow(e){
   if(e.type==="Lent"||e.type==="Borrowed"){ const a=+e.amount||0, w=e.who||"Someone", out=(e.type==="Lent")===(a>0);
     const what=e.type==="Lent"?(a>0?"Lent to "+w:w+" paid you back"):(a>0?"Borrowed from "+w:"Paid back "+w);
-    const sub=[shortDate(e.date),(out?"from ":"into ")+wallet(e.from||""),e.note||""].filter(Boolean).join(" · ");
+    const sub=[shortDate(e.date),e.note||""].filter(Boolean).join(" · ");
     return `<button class="item" data-edit="${esc(e.id)}"><span class="dot d-mv" aria-hidden="true">${out?"↗":"↙"}</span><span class="txt"><span class="t1">${esc(what)}</span><span class="t2">${esc(sub)}</span></span><span class="amt num c-mv">${out?"−":"+"}${rs(Math.abs(a))}</span></button>`; }
   const cls={Spent:"c-out",Received:"c-in",Moved:"c-mv",Car:"c-car"}[e.type];
   const dot={Spent:["d-out","−"],Received:["d-in","+"],Moved:["d-mv","⇄"],Car:["d-car","★"]}[e.type];
@@ -1117,7 +1116,7 @@ function viewPeople(){
   const grp=(t,l)=>l.length?`<p class="glab">${t}</p><section class="card group"><div class="list">${l.map(row).join("")}</div></section>`:"";
   return `
   <div class="htop"><h1>People</h1><div class="tbtns"><button class="gbtn" data-add="People" aria-label="Lend or borrow"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
-  <p class="hdate">Money you lent or borrowed. It never changes your spending.</p>
+  <p class="hdate">Money you lent or borrowed. It never changes your account balances.</p>
   <section class="card two"><div><p class="lab">I owe</p><p class="v">${rs(tot(owe)).replace("Rs ","")}</p></div><div><p class="lab">Owed to me</p><p class="v c-in">${rs(tot(owed)).replace("Rs ","")}</p></div></section>
   ${all.length?grp("I owe",owe)+grp("Owed to me",owed)+grp("Settled",done)+`<p class="note">Tap a person to see every lend and pay-back with them.</p>`
     :`<p class="empty">No one owes you, and you owe no one. Tap + when you lend or borrow money.</p>`}`;
@@ -1407,7 +1406,7 @@ function drawSheet(){
     <div class="field"><label for="amt">Amount (Rs)</label><input id="amt" class="amount num" inputmode="decimal" autocomplete="off" placeholder="500" value="${esc(e.amount)}"><p class="err" id="amtErr"></p></div>
     ${t==="Spent"?`<div class="field"><span class="flab">Category <span class="muted" style="font-weight:400">(tap more than one if it fits more)</span></span><div class="chips" id="catChips">${catOrder().map(c=>`<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="${(e.cats||[]).includes(c)}">${esc(c)}</button>`).join("")}</div></div>`:""}
     ${t==="Spent" && (e.cats||[]).length && billsForCat(e.cats).length?`<div class="field"><span class="flab">Which bill is this? (optional)</span><div class="chips">${billsForCat(e.cats).map(b=>`<button type="button" class="chip" data-bill="${esc(b.name)}" aria-pressed="${e.bill===b.name}">${esc(b.name)}</button>`).join("")}<button type="button" class="chip" data-bill="-" aria-pressed="${e.bill==="-"}">Not a bill</button></div></div>`:""}
-    <div class="field"><span class="flab">${fromLabel}</span><div class="chips">${names.filter(n=>t==="Car"?n!==S.goal.account:true).map(n=>`<button type="button" class="chip" data-from="${esc(n)}" aria-pressed="${n===curFrom}">${esc(wallet(n))}</button>`).join("")}</div></div>
+    ${t==="People"?`<p class="note">This only keeps a record of who owes whom. It doesn't change your account balances.</p>`:`<div class="field"><span class="flab">${fromLabel}</span><div class="chips">${names.filter(n=>t==="Car"?n!==S.goal.account:true).map(n=>`<button type="button" class="chip" data-from="${esc(n)}" aria-pressed="${n===curFrom}">${esc(wallet(n))}</button>`).join("")}</div></div>`}
     ${t==="Car" && goalList().length>1?`<div class="field"><span class="flab">Which goal</span><div class="chips">${goalList().map(g=>`<button type="button" class="chip" data-gpick="${esc(g.id)}" aria-pressed="${(e.goal||"car")===g.id}">${esc(g.name||"Goal")}</button>`).join("")}</div></div>`:""}
     ${t==="Moved"?`<div class="field"><span class="flab">To</span><div class="chips">${names.map(n=>`<button type="button" class="chip" data-to="${esc(n)}" aria-pressed="${n===curTo}">${esc(wallet(n))}</button>`).join("")}</div></div>`:""}
     ${t==="Received"?`<div class="field"><span class="flab">Where it came from</span><div class="chips">${SRCS.map(x=>`<button type="button" class="chip" data-src="${x}" aria-pressed="${e.src===x}">${x}</button>`).join("")}</div></div>`:""}
@@ -1432,7 +1431,7 @@ async function saveSheet(){
   const from = e.from || ({Spent:S.defaults.spent,Received:S.defaults.received,Car:S.defaults.saveFrom,People:S.defaults.spent}[t]||"");
   if(t==="People"){ const who=String(e.who||"").trim(); if(!who){ err.textContent="Type the person's name"; return; }
     const [lab,typ,sg]=ACTS[e.act||"lend"];
-    const pdoc={type:typ, amount:sg*amt, who, date:e.date||todayStr(), cat:"", bill:"", from, to:"", note:String(e.note||"").trim(), before:false, created: sheet.editing?(e.created||Date.now()):Date.now()};
+    const pdoc={type:typ, amount:sg*amt, who, date:e.date||todayStr(), cat:"", bill:"", from:"", to:"", note:String(e.note||"").trim(), before:false, created: sheet.editing?(e.created||Date.now()):Date.now()};
     const btn=document.getElementById("saveBtn"); btn.disabled=true; btn.textContent="Saving…";
     try{ if(sheet.editing) await entriesCol.doc(sheet.id).set(pdoc); else await entriesCol.doc().set(pdoc); sheet=null; drawSheet(); toast({lend:"Saved: lent "+rs(amt)+" to "+who, borrow:"Saved: borrowed "+rs(amt)+" from "+who, theyPaid:"Saved: "+who+" paid back "+rs(amt), iPaid:"Saved: you paid back "+rs(amt)+" to "+who}[e.act||"lend"]); }
     catch(x){ btn.disabled=false; btn.textContent="Save"; err.textContent=writeError(x); }
