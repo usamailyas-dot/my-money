@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.22 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.23 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -472,7 +472,7 @@ let searchQ = "", showAmt = false; /* balances start hidden every time the app o
 let frontCard = ""; try{ frontCard=localStorage.getItem("mm.card")||""; }catch(e){}
 let tab = "home", monthKey = ym(todayStr()), sheet = null, unlocked = "", openCat = "";
 try { unlocked = sessionStorage.getItem("mm.unlock") || ""; } catch (e) {}
-let lockPin = false; /* lock screen shows the PIN box instead of Face ID */
+let lockPin = false, autoFace = false; /* autoFace: Face ID already asked once for this lock */ /* lock screen shows the PIN box instead of Face ID */
 try { const t = localStorage.getItem("mm.tab"); if (t) tab = t; } catch (e) {}
 
 /* ---------- helpers ---------- */
@@ -503,21 +503,25 @@ async function faceSetup(){
     if(!c) throw 0; try{ localStorage.setItem("mm.faceid",b64(c.rawId)); }catch(e){} render(); toast("Face ID is on. Next time, tap Unlock with Face ID."); }
   catch(x){ toast("Face ID wasn't turned on. Try again."); }
 }
-async function faceUnlock(){
+async function faceUnlock(auto){
   const id=faceId(); if(!id||!canFace()) return;
   const err=document.getElementById("pinErr");
   try{ const a=await navigator.credentials.get({publicKey:{challenge:rnd(32), rpId:location.hostname, allowCredentials:[{type:"public-key",id:unb64(id)}], userVerification:"required", timeout:60000}});
     if(a && a.response && (a.response.authenticatorData||a.response.signature)){ unlocked=S.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} afterUnlock(); return; }
     throw 0; }
-  catch(x){ if(err) err.textContent="Face ID didn't work. Try again or type your PIN."; }
+  catch(x){ if(err && !auto) err.textContent="Face ID didn't work. Try again or type your PIN."; }
 }
 /* ---------- auto-lock: "0" immediately, "60" / "300" seconds away, "close" only when the app is closed ---------- */
 function lockAfter(){ try{ const v=localStorage.getItem("mm.lockAfter"); return v==null?"0":v; }catch(e){ return "0"; } }
 function lockNow(){
   try{ if(sheet) readSheetInputs(); }catch(e){}
-  closeHold(); unlocked=""; lockPin=false; limitSheet=null; try{ sessionStorage.removeItem("mm.unlock"); }catch(e){}
+  closeHold(); unlocked=""; lockPin=false; autoFace=false; limitSheet=null; try{ sessionStorage.removeItem("mm.unlock"); }catch(e){}
   document.getElementById("sheetHost").innerHTML=""; document.getElementById("toastHost").innerHTML=""; render();
 }
+/* ask for Face ID by itself when the lock screen shows, so the iPhone passkey sheet comes up without tapping the icon first */
+function autoFaceAsk(){ if(autoFace || document.visibilityState!=="visible" || !faceId() || !canFace()) return;
+  if(!S.pinHash || unlocked===S.pinHash || lockPin) return; autoFace=true; setTimeout(()=>{ if(unlocked!==S.pinHash && !lockPin && document.visibilityState==="visible") faceUnlock(true); },300); }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) autoFaceAsk(); });
 function afterUnlock(){ render(); if(voice) drawVoice(); else if(sheet) drawSheet(); }
 document.addEventListener("visibilitychange",()=>{
   if(!S.pinHash || unlocked!==S.pinHash) return;
@@ -904,6 +908,7 @@ function render(){
          <p class="err" id="pinErr"></p><button class="primary" type="submit">Unlock</button></form>
          ${face?`<button type="button" class="lnk" id="useFace">Use Face ID instead</button>`:""}</div>`;
     if(!face || lockPin) setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
+    else autoFaceAsk();
     return;
   }
   app.innerHTML = tab==="month"?viewMonth(): tab==="people"?viewPeople(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
