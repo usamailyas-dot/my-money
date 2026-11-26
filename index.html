@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.31 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.32 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -1341,7 +1341,7 @@ function backupDue(){
   const base=last?new Date(last+"T00:00:00").getTime():first, days=(Date.now()-base)/864e5;
   return days >= (last?30:7);
 }
-const NEWHOME="https://getkifaya.github.io/", MOVED=location.hostname==="usamailyas-dot.github.io";
+const NEWHOME="https://getkifaya.github.io/", MOVED=false; /* the old link stays in use for the owner, so no "moved" notice */
 function backupBar(){
   if(MOVED){ /* the old link: point people to the new one */
     const want=!(S.pinHash && unlocked!==S.pinHash) && !sheet; const old=document.getElementById("mvBar");
