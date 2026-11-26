@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.11 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.12 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -302,6 +302,27 @@ function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;"
 function parseAmount(t){
   const m=String(t||"").toLowerCase().replace(/rs\.?/g,"").match(/(-?[\d,]*\.?\d+)\s*(k|lac|lacs|lakh|lakhs)?/);
   if(!m) return NaN; let v=parseFloat(m[1].replace(/,/g,"")); if(m[2]==="k") v*=1000; else if(m[2]) v*=100000; return Math.round(v*100)/100;
+}
+/* ---------- Face ID (passkey on this device only; nothing leaves the phone) ---------- */
+function canFace(){ return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext); }
+function faceId(){ try{ return localStorage.getItem("mm.faceid")||""; }catch(e){ return ""; } }
+function b64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function unb64(t){ return Uint8Array.from(atob(t),c=>c.charCodeAt(0)); }
+function rnd(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return a; }
+async function faceSetup(){
+  if(!canFace()){ toast("Face ID isn't available here"); return; }
+  try{ const c=await navigator.credentials.create({publicKey:{rp:{name:"My Money",id:location.hostname}, user:{id:rnd(16),name:"My Money",displayName:"My Money"}, challenge:rnd(32),
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}], authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"}, timeout:60000, attestation:"none"}});
+    if(!c) throw 0; try{ localStorage.setItem("mm.faceid",b64(c.rawId)); }catch(e){} render(); toast("Face ID is on. Next time, tap Unlock with Face ID."); }
+  catch(x){ toast("Face ID wasn't turned on. Try again."); }
+}
+async function faceUnlock(){
+  const id=faceId(); if(!id||!canFace()) return;
+  const err=document.getElementById("pinErr");
+  try{ const a=await navigator.credentials.get({publicKey:{challenge:rnd(32), rpId:location.hostname, allowCredentials:[{type:"public-key",id:unb64(id)}], userVerification:"required", timeout:60000}});
+    if(a && a.response && (a.response.authenticatorData||a.response.signature)){ unlocked=S.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} render(); return; }
+    throw 0; }
+  catch(x){ if(err) err.textContent="Face ID didn't work. Try again or type your PIN."; }
 }
 async function hashPin(pin){
   if(!(window.crypto && crypto.subtle)) return "plain:"+pin;
@@ -661,10 +682,11 @@ function render(){
   if(S.pinHash && unlocked!==S.pinHash){
     document.getElementById("tabs").innerHTML="";
     app.innerHTML=`<form id="lockForm" class="card hero" style="display:flex;flex-direction:column;gap:12px;margin-top:10vh">
-      <p class="lab">My Money is locked</p><h2>Enter your PIN</h2>
+      <p class="lab">My Money is locked</p>
+      ${faceId()&&canFace()?`<button type="button" class="primary" id="faceBtn" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1M15 9v1M12 9v4h-1M9 16c1.7 1.2 4.3 1.2 6 0"/></svg>Unlock with Face ID</button><p class="small muted" style="text-align:center">or type your PIN</p>`:`<h2>Enter your PIN</h2>`}
       <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" class="amount num" aria-label="PIN" placeholder="••••">
       <p class="err" id="pinErr"></p><button class="primary" type="submit">Unlock</button></form>`;
-    setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
+    if(!(faceId()&&canFace())) setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
     return;
   }
   app.innerHTML = tab==="month"?viewMonth(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
@@ -820,7 +842,8 @@ function viewSettings(){
     <div class="setrow"><span class="small">Goal savings come from</span>${sel("d-saveFrom",s.defaults.saveFrom)}</div>`)}
     ${sec("lock","PIN lock",s.pinHash?"On":"Off",`
     <div class="setrow"><span class="small">${s.pinHash?"PIN is on. New PIN (leave empty to keep)":"PIN (4 to 8 numbers, optional)"}</span><input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${s.pinHash?"••••":"none"}"></div>
-    ${s.pinHash?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinOff" style="width:auto"> Turn the PIN off</label>`:""}`)}
+    ${s.pinHash?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinOff" style="width:auto"> Turn the PIN off</label>`:""}
+    ${s.pinHash&&canFace()?(faceId()?`<div class="setrow"><span class="small">Face ID is on for this phone. Your PIN still works as a backup.</span><button type="button" class="ghost" id="faceOff">Turn off Face ID</button></div>`:`<button type="button" class="ghost" id="faceOn">Use Face ID to unlock</button><p class="note">Face ID stays on this phone. Your PIN still works as a backup.</p>`):""}`)}
     <p class="err" id="setErr"></p>
     <button class="primary" type="submit">Save settings</button>
   </form>
@@ -843,6 +866,7 @@ function viewSettings(){
     <li><b>Speak:</b> tap <b>Speak or paste</b> on Home, tap the mic and speak in English. Say one or many, like "500 food, 1200 petrol from bank, 300 tea cash". Add a date if it wasn't today, like "yesterday" or "24th November". Tap the mic again, check the list, tap <b>Save all</b>.</li>
     <li><b>Speak while looking at your bank app (Voice Memos):</b> open Voice Memos and tap record. Switch to your bank app and say each transaction. Go back, stop, open the recording, tap the transcript icon, select all and Copy. In My Money tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
     <li><b>People:</b> money you lent or borrowed. It changes your balance but isn't counted as spending or income. Tap <b>Paid back</b> when it's returned.</li>
+    <li><b>Face ID:</b> if you use a PIN, go to Settings ▸ PIN lock ▸ <b>Use Face ID to unlock</b>. Then tap <b>Unlock with Face ID</b> when the app opens. Your PIN still works as a backup.</li>
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
     <li><b>Bills:</b> tap Mark paid, or pick the bill when you add a Spent. You can change the amount before saving, so bills that change each month still work.</li>
@@ -1043,7 +1067,7 @@ async function saveSettings(ev){
   const pinNew=v("pinNew"), pinOff=document.getElementById("pinOff");
   if(pinNew){ if(!/^\d{4,8}$/.test(pinNew)){ document.getElementById("setErr").textContent="PIN must be 4 to 8 digits"; return; }
     N.pinHash=await hashPin(pinNew); unlocked=N.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} }
-  else if(pinOff && pinOff.checked){ delete N.pinHash; }
+  else if(pinOff && pinOff.checked){ delete N.pinHash; try{ localStorage.removeItem("mm.faceid"); }catch(e){} }
   const btn=ev.target.querySelector("button[type=submit]"); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   try{
     await profileRef.set(N);
@@ -1080,8 +1104,11 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
+  if(t.id==="faceBtn"){ faceUnlock(); return; }
+  if(t.id==="faceOn"){ faceSetup(); return; }
+  if(t.id==="faceOff"){ try{ localStorage.removeItem("mm.faceid"); }catch(e){} render(); toast("Face ID is off. Use your PIN."); return; }
   if(t.id==="sheetBg"){ if(ev.target===t){ sheet=null; drawSheet(); } return; }
   if(t.dataset.src){ readSheetInputs(); sheet.e.src = sheet.e.src===t.dataset.src ? "" : t.dataset.src; drawSheet(); return; }
   if(t.dataset.rname!==undefined){ readSheetInputs(); sheet.e.note=t.dataset.rname; if(t.dataset.rsrc) sheet.e.src=t.dataset.rsrc; drawSheet(); return; }
