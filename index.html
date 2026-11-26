@@ -4,13 +4,13 @@
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#F3F1FB" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#13111E" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.13 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.14 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -42,7 +42,7 @@
  if("serviceWorker" in navigator) addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
 })();</script>
 </head><body>
-<title>My Money</title>
+<title>Kifaya</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-display:swap;font-weight:400;src:url('bricolage-grotesque-latin-400-normal.woff2') format('woff2')}
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-display:swap;font-weight:500;src:url('bricolage-grotesque-latin-500-normal.woff2') format('woff2')}
@@ -345,6 +345,13 @@ input,select,#vtext{border:0;background:var(--surface);border-radius:10px;font-f
 .group{padding:2px 14px}
 .eyebtn{width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .eyebtn svg{width:17px;height:17px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .kaf{width:30px;height:30px;color:var(--car);display:grid}
+.brand .kaf svg{width:30px;height:30px}
+.dot.av{font-size:14px;font-weight:600}
+.pamt{text-align:right;font-weight:500;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pamt span{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.paybtn{background:var(--bg);border:0;color:var(--ink);font-weight:600;font-size:13px;padding:7px 12px}
 </style>
 
 <div class="wrap" id="app">
@@ -400,7 +407,7 @@ function unb64(t){ return Uint8Array.from(atob(t),c=>c.charCodeAt(0)); }
 function rnd(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return a; }
 async function faceSetup(){
   if(!canFace()){ toast("Face ID isn't available here"); return; }
-  try{ const c=await navigator.credentials.create({publicKey:{rp:{name:"My Money",id:location.hostname}, user:{id:rnd(16),name:"My Money",displayName:"My Money"}, challenge:rnd(32),
+  try{ const c=await navigator.credentials.create({publicKey:{rp:{name:"Kifaya",id:location.hostname}, user:{id:rnd(16),name:"Kifaya",displayName:"Kifaya"}, challenge:rnd(32),
       pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}], authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"}, timeout:60000, attestation:"none"}});
     if(!c) throw 0; try{ localStorage.setItem("mm.faceid",b64(c.rawId)); }catch(e){} render(); toast("Face ID is on. Next time, tap Unlock with Face ID."); }
   catch(x){ toast("Face ID wasn't turned on. Try again."); }
@@ -666,7 +673,7 @@ function startRec(){
   rec=new SR(); rec.lang="en-IN"; rec.continuous=true; rec.interimResults=true;
   rec.onresult=e=>{ let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin+=r[0].transcript+" "; else interim+=r[0].transcript; }
     voice.text=(base?base+" , ":"")+(fin+interim).trim(); const t=document.getElementById("vtext"); if(t) t.value=voice.text; };
-  rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ voice.listening=false; voice.msg="Please allow the microphone for My Money, then tap the mic again."; drawVoice(); } };
+  rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ voice.listening=false; voice.msg="Please allow the microphone for Kifaya, then tap the mic again."; drawVoice(); } };
   rec.onend=()=>{ if(voice && voice.listening){ try{ rec.start(); return; }catch(x){} } if(voice){ voice.listening=false; vReadText(); } };
   try{ rec.start(); voice.listening=true; voice.msg=""; drawVoice(); }catch(x){ voice.msg="The mic couldn't start. Try again."; drawVoice(); }
 }
@@ -680,7 +687,7 @@ async function saveVoice(){
   catch(x){ if(btn){ btn.disabled=false; btn.textContent="Save all"; } document.getElementById("vErr").textContent=writeError(x); }
 }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden && showAmt){ showAmt=false; if(tab==="home" && !sheet && !voice) setTimeout(render,0); } });
-document.addEventListener("visibilitychange",()=>{ if(document.hidden && voice && voice.listening){ stopRec(); voice.msg="The mic stops when you leave My Money. To speak over your bank app, use Voice Memos (Settings ▸ How to use)."; } });
+document.addEventListener("visibilitychange",()=>{ if(document.hidden && voice && voice.listening){ stopRec(); voice.msg="The mic stops when you leave Kifaya. To speak over your bank app, use Voice Memos (Settings ▸ How to use)."; } });
 function lac(n){ return n>=100000 ? (Math.round(n/10000)/10).toString().replace(/\.0$/,"")+" lac" : rs(n); }
 const CARDC=[["var(--cob)","#fff"],["var(--mango)","#2A1A00"],["var(--coral)","#fff"],["var(--mint)","#fff"],["var(--pinkc)","#fff"]];
 const CATC=["#0A5F8A","#D9A21B","#0F8A6A","#E0607E","#5B8DD9","#C6432C","#7A9E3B","#8C5BC7","#E38B2C","#2BA3A0"];
@@ -772,7 +779,7 @@ function render(){
   if(S.pinHash && unlocked!==S.pinHash){
     document.getElementById("tabs").innerHTML="";
     app.innerHTML=`<form id="lockForm" class="card hero" style="display:flex;flex-direction:column;gap:12px;margin-top:10vh">
-      <p class="lab">My Money is locked</p>
+      <p class="lab">Kifaya is locked</p>
       ${faceId()&&canFace()?`<button type="button" class="primary" id="faceBtn" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1M15 9v1M12 9v4h-1M9 16c1.7 1.2 4.3 1.2 6 0"/></svg>Unlock with Face ID</button><p class="small muted" style="text-align:center">or type your PIN</p>`:`<h2>Enter your PIN</h2>`}
       <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" class="amount num" aria-label="PIN" placeholder="••••">
       <p class="err" id="pinErr"></p><button class="primary" type="submit">Unlock</button></form>`;
@@ -821,7 +828,7 @@ function viewHome(){
   const EYE=showAmt?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'
     :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2.1 0 3.9.7 5.4 1.7M22 12s-3.5 7-10 7c-2.1 0-3.9-.7-5.4-1.7"/><path d="M3 3l18 18"/></svg>';
   return `
-  <div class="htop"><h1>My Money</h1><button class="plusbtn" data-add="Spent" aria-label="Add an entry">+</button></div>
+  <div class="htop"><h1 class="brand"><span class="kaf"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg></span>Kifaya</h1><button class="plusbtn" data-add="Spent" aria-label="Add an entry">+</button></div>
   <p class="hdate">${esc(new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))}</p>
   <div class="htotal"><p class="lab" style="display:flex;align-items:center;gap:8px">Money I have <button class="eyebtn" id="eyeBtn" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</button></p><p class="big"><small>Rs</small>${hid(have)}</p></div>
   <div class="wstack" style="height:${stackH}px">${order.map((c,i)=>{ const isF=i===order.length-1;
@@ -830,15 +837,18 @@ function viewHome(){
       ${isF?`<span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to see the plan</span>`:`<span class="foot" style="display:block">Tap a card above to switch</span>`}</span>`:""}
     </button>`; }).join("")}</div>
   ${warns.map(w=>`<div class="card warnbox" role="alert"><b>Check this</b><p>${w}</p></div>`).join("")}
-  ${PHONE && !standalone() ?`<section class="card"><b>Put My Money on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
+  ${PHONE && !standalone() ?`<section class="card"><b>Put Kifaya on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
   <button class="voicebtn" data-voice="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak or paste</button>
   <div class="secthead"><h2>${esc(MON[+k.slice(5,7)-1])}</h2><button class="linkbtn" data-tab="month">See month</button></div>
   <section class="card two"><div><p class="lab">Money in</p><p class="v">${money(sumType(mon,"Received"))}</p></div><div><p class="lab">Money out</p><p class="v">${money(sumType(mon,"Spent"))}</p></div></section>
   ${S.bills.length?`<section class="card" data-tab="month" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">Bills this month</span>${unpaid.length?`<span class="small muted">${unpaidSum?rs(unpaidSum):""}${unpaidVar?(unpaidSum?" + ":"")+"bills that change":""}</span>`:""}</span>${unpaid.length?`<span class="pill p-due">${unpaid.length} to pay</span>`:`<span class="pill p-ok">All paid</span>`}</div></section>`:""}
-  ${(()=>{ const P=people().filter(x=>Math.abs(x.net)>=0.5); if(!P.length) return "";
+  ${(()=>{ const P=people().filter(x=>Math.abs(x.net)>=0.5);
     const owed=P.filter(x=>x.net>0).reduce((s,x)=>s+x.net,0), owe=P.filter(x=>x.net<0).reduce((s,x)=>s-x.net,0);
-    return `<section class="card" style="padding-block:10px 4px"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">People</span><span class="small muted">${owed?"They owe you "+rs(owed):""}${owed&&owe?" · ":""}${owe?"You owe "+rs(owe):""}</span></span><button class="linkbtn" data-add="People">+ Add</button></div>
-    <div class="list">${P.map(x=>`<div class="item" style="cursor:default"><span class="dot d-mv" aria-hidden="true">${x.net>0?"↗":"↙"}</span><span class="txt"><span class="t1">${x.net>0?esc(x.name)+" owes you":"You owe "+esc(x.name)}</span><span class="t2">${rs(Math.abs(x.net))}</span></span><button class="paybtn" data-payback="${esc(x.name)}">Paid back</button></div>`).join("")}</div></section>`; })()}
+    const last=n=>{ const l=sorted(E.filter(e=>(e.type==="Lent"||e.type==="Borrowed") && (e.who||"").trim().toLowerCase()===n.toLowerCase())); return l[0]; };
+    return `<div class="secthead"><h2>People</h2><button class="linkbtn" data-add="People">+ Add</button></div>
+    <section class="card two"><div><p class="lab">I owe</p><p class="v">${hid(owe)}</p></div><div><p class="lab">Owed to me</p><p class="v c-in">${hid(owed)}</p></div></section>
+    ${P.length?`<section class="card group"><div class="list">${P.map(x=>{ const l=last(x.name); const wasLend=l&&l.type==="Lent";
+      return `<div class="item" style="cursor:default"><span class="dot av" aria-hidden="true">${esc((x.name.trim()[0]||"?").toUpperCase())}</span><span class="txt"><span class="t1">${esc(x.name)}</span><span class="t2">${x.net>0?"I lent":"I borrowed"}${l?" · "+esc(shortDate(l.date)):""}</span></span><span class="pamt ${x.net>0?"c-in":""}">${hid(Math.abs(x.net))}<span>${x.net>0?"owes me":"I owe"}</span></span><button class="paybtn" data-payback="${esc(x.name)}">${x.net>0?"Got it":"Pay back"}</button></div>`; }).join("")}</div></section>`:`<p class="note">No one owes you, and you owe no one. Tap + Add when you lend or borrow money. It won't change what your cards show as spending.</p>`}`; })()}
   ${(()=>{ const c=checkCat(); if(!c) return ""; const l=E.filter(e=>e.type==="Spent" && hasCat(e,c)); if(!l.length) return "";
     return `<section class="card" data-checklater="1" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
   <div class="secthead"><h2>Latest</h2>${E.length>8?`<button class="linkbtn" data-tab="month">See all</button>`:""}</div>
@@ -949,11 +959,11 @@ function viewSettings(){
     ${PHONE?`<p class="flab" style="margin-top:6px">Daily safety copies (automatic)</p><p class="note">Every day, the app keeps a copy of your money on this phone, for the last 7 days. Use one if you delete or change something by mistake.</p>
     ${snapKeys().length?`<div class="list">${snapKeys().map(k=>{ let n=0; try{ n=(JSON.parse(localStorage.getItem(k)).entries||[]).length; }catch(e){} return `<div class="item" style="cursor:default"><span class="txt"><span class="t1">${esc(shortDate(k.slice(8))+" "+k.slice(8,12))}</span><span class="t2">${n} entries</span></span><button class="paybtn" data-snap="${esc(k)}">Restore</button></div>`; }).join("")}</div>`:`<p class="note">The first copy is made today.</p>`}`:""}
   </section>
-  <details class="card sect help" data-sec="help" ${openSecs.has("help")?"open":""}><summary>How to use My Money</summary><div class="sectbody"><ul style="margin:0;padding-left:18px">
+  <details class="card sect help" data-sec="help" ${openSecs.has("help")?"open":""}><summary>How to use Kifaya</summary><div class="sectbody"><ul style="margin:0;padding-left:18px">
     <li><b>Add an entry:</b> tap the big <b>+</b>. Pick Spent, Received, Moved or ${esc(S.goal.name||"Goal")}, type the amount, tap Save.</li>
     <li><b>Spent</b> is money that left you. <b>Received</b> is money that came in. <b>Moved</b> is between your own accounts, like an ATM withdrawal.</li>
     <li><b>Speak:</b> tap <b>Speak or paste</b> on Home, tap the mic and speak in English. Say one or many, like "500 food, 1200 petrol from bank, 300 tea cash". Add a date if it wasn't today, like "yesterday" or "24th November". Tap the mic again, check the list, tap <b>Save all</b>.</li>
-    <li><b>Speak while looking at your bank app (Voice Memos):</b> open Voice Memos and tap record. Switch to your bank app and say each transaction. Go back, stop, open the recording, tap the transcript icon, select all and Copy. In My Money tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
+    <li><b>Speak while looking at your bank app (Voice Memos):</b> open Voice Memos and tap record. Switch to your bank app and say each transaction. Go back, stop, open the recording, tap the transcript icon, select all and Copy. In Kifaya tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
     <li><b>People:</b> money you lent or borrowed. It changes your balance but isn't counted as spending or income. Tap <b>Paid back</b> when it's returned.</li>
     <li><b>Face ID:</b> if you use a PIN, go to Settings ▸ PIN lock ▸ <b>Use Face ID to unlock</b>. Then tap <b>Unlock with Face ID</b> when the app opens. Your PIN still works as a backup.</li>
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
@@ -967,7 +977,7 @@ function viewSettings(){
     ${PHONE?`<li><b>No internet?</b> No problem. Everything works offline and is saved on this phone.</li><li><b>Backup</b> once a month to iCloud Drive, so a lost phone doesn't mean lost money records.</li>`:""}
   </ul></div></details>`;
 }
-function checkBuild(){ if(!PHONE) return; try{ const b=localStorage.getItem("mm.build"), now=window.__BUILD__||""; localStorage.setItem("mm.build", now); if(b && b!==now) setTimeout(()=>toast("My Money was updated to version "+now),400); }catch(e){} }
+function checkBuild(){ if(!PHONE) return; try{ const b=localStorage.getItem("mm.build"), now=window.__BUILD__||""; localStorage.setItem("mm.build", now); if(b && b!==now) setTimeout(()=>toast("Kifaya was updated to version "+now),400); }catch(e){} }
 function standalone(){ try{ return matchMedia("(display-mode: standalone)").matches || !!navigator.standalone; }catch(e){ return false; } }
 function viewSetup(){
   const st=setup.step, v=k=>esc(setup[k]||"");
@@ -978,7 +988,7 @@ function viewSetup(){
       <div class="wcard" style="top:44px;height:110px;background:var(--mango);color:#2A1A00"><div class="n"><span>Wallet</span></div></div>
       <div class="wcard" style="top:88px;height:110px;background:var(--lilac)"><div class="n"><span>Savings goal</span></div><span class="prog"><i style="width:35%"></i></span></div>
     </div>
-    <h2>Welcome to My Money</h2>
+    <h2>Welcome to Kifaya</h2>
     <p>Track what you spend, what comes in, and what you save. Everything stays on this phone. Nobody else can see it.</p>
     <button class="primary" data-setup="next">Set up in 1 minute</button>
     <label class="ghost" style="text-align:center;cursor:pointer">I have a backup file<input type="file" id="rsf" accept=".json,application/json" hidden></label>
@@ -1041,13 +1051,13 @@ function lastBackup(){ try{ return localStorage.getItem("mm.lastBackup")||""; }c
 async function downloadBackup(){
   if(!downloads){ toast("Downloads aren't available here."); return; }
   const data=JSON.stringify({app:"my-money", v:1, exported:new Date().toISOString(), profile:S, entries:E}, null, 1);
-  try{ const r=await downloads.save({filename:"My Money backup "+todayStr()+".json", data:new Blob([data],{type:"application/json"})});
+  try{ const r=await downloads.save({filename:"Kifaya backup "+todayStr()+".json", data:new Blob([data],{type:"application/json"})});
     if(!r || r.status!=="declined"){ try{ localStorage.setItem("mm.lastBackup", todayStr()); }catch(e){} if(tab==="settings") render(); toast("Backup saved: "+E.length+" entries"); } }
   catch(x){ if(x&&x.code!=="declined") toast("Couldn't save the backup here."); }
 }
 async function restoreBackup(file){
   let o=null; try{ o=JSON.parse(await file.text()); }catch(e){}
-  if(!o || o.app!=="my-money" || !o.profile || !Array.isArray(o.entries)){ toast("That isn't a My Money backup file."); return; }
+  if(!o || o.app!=="my-money" || !o.profile || !Array.isArray(o.entries)){ toast("That isn't a Kifaya backup file."); return; }
   if(!confirm("Replace everything in this app with the backup from "+String(o.exported||"").slice(0,10)+"? ("+o.entries.length+" entries)")) return;
   try{ await window.__restore(o); unlocked=o.profile.pinHash||""; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} toast("Restored "+o.entries.length+" entr"+(o.entries.length===1?"y":"ies")); setTimeout(render,60); }
   catch(x){ toast(writeError(x)); }
@@ -1183,7 +1193,7 @@ async function downloadExcel(){
   bal.push({Account:"Money I have", Balance:Math.round(moneyIHave(b))}, {Account:(S.goal.name||"Goal")+" fund", Balance:Math.round(carFund())});
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bal), "Balances");
   const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
-  try{ await downloads.save({filename:"My Money "+todayStr()+".xlsx", data:new Blob([buf])}); }
+  try{ await downloads.save({filename:"Kifaya "+todayStr()+".xlsx", data:new Blob([buf])}); }
   catch(x){ if(x&&x.code!=="declined") toast("Couldn't download the file here."); }
 }
 
@@ -1256,7 +1266,7 @@ document.addEventListener("toggle", ev=>{ const d=ev.target; if(d && d.dataset &
 async function addBillsFile(f){
   let d=null; try{ d=JSON.parse(await f.text()); }catch(x){}
   const list=d && d.app==="my-money" && d.kind==="bills" && Array.isArray(d.bills) ? d.bills : null;
-  if(!list){ toast("That isn't a My Money bills file"); return; }
+  if(!list){ toast("That isn't a Kifaya bills file"); return; }
   const N=clone(S), have=new Set(N.bills.map(b=>norm(b.name))); let n=0;
   list.forEach(b=>{ const name=String(b.name||"").trim(); if(!name || have.has(norm(name))) return;
     const cat=S.categories.find(c=>c.toLowerCase()===String(b.cat||"").toLowerCase())||"";
