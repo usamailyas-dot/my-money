@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.24 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.25 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -399,7 +399,9 @@ body{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px
 .srpanel .search{flex:1}
 .srpanel .row{gap:12px}
 html,body,button,a,input,select,textarea,.wc,.item,svg{touch-action:pan-y}
-html,body{overscroll-behavior-x:none;overflow-x:hidden;max-width:100%}
+html,body{overscroll-behavior-x:none;max-width:100%}
+html{overflow-x:hidden}
+body{overflow-x:clip} /* clip, not hidden, so sticky bars keep working */
 #app{overflow-x:clip}
 .mhead .mrow{gap:6px}
 .gbtn svg path{fill:none}
@@ -417,6 +419,7 @@ html,body{overscroll-behavior-x:none;overflow-x:hidden;max-width:100%}
 .pamt{text-align:right;font-weight:500;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pamt span{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .paybtn{background:var(--bg);border:0;color:var(--ink);font-weight:600;font-size:13px;padding:7px 12px}
+.savebar{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .lockw{min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 30px;text-align:center;cursor:default}
 .lockw .lk{width:76px;height:76px;color:var(--car)}
 .lockw .lt{font-size:28px;font-weight:700;letter-spacing:-.02em}
@@ -819,6 +822,7 @@ function balances(){
     else { if(e.from in b) b[e.from]-=a; if(e.to in b) b[e.to]+=a; } });
   return b;
 }
+function goalOff(){ return !!S.noGoal && carFund()===0 && !(S.goals||[]).length; } /* skipped the goal in setup and never used it */
 function goalList(){ return [Object.assign({id:"car"},S.goal)].concat((S.goals||[]).map(g=>Object.assign({account:S.goal.account},g))); }
 function goalById(id){ return goalList().find(g=>g.id===(id||"car"))||goalList()[0]; }
 function goalFund(id){ id=id||"car"; return (id==="car"?(+S.goal.already||0):0)+E.filter(e=>e.type==="Car" && (e.goal||"car")===id).reduce((s,e)=>s+(+e.amount||0),0); }
@@ -934,19 +938,21 @@ function sorted(list){ return list.slice().sort((a,b)=> (b.date>a.date?1:b.date<
 function viewHome(){
   const b=balances(), have=moneyIHave(b), cf=carFund(), price=+S.goal.price||0;
   const pct=price?Math.min(100,cf/price*100):0;
-  const daily=S.accounts.filter(a=>a.name && a.name!==S.goal.account);
+  /* the savings account gets its own card only when it holds nothing but savings; if it is also a spending account (like Bank), it keeps its card and shows the part that isn't savings */
+  const shared=n=>n===S.goal.account && !goalOff() && (n===S.defaults.spent || n===S.defaults.received || (b[n]||0)-cf>0.5);
+  const daily=S.accounts.filter(a=>a.name && (a.name!==S.goal.account || goalOff() || shared(a.name)));
   const goalExtra=Math.max(0,(b[S.goal.account]||0)-cf);
   const k=ym(todayStr()), mon=inMonth(k);
   const unpaid=S.bills.map(x=>[x,billStatus(x,k)]).filter(([x,s])=>s.state!=="paid");
   const unpaidSum=unpaid.reduce((s,[x])=>s+billAmt(x),0), unpaidVar=varies(unpaid);
   const warns=[];
   const gb=b[S.goal.account]||0;
-  if(cf>0 && gb < cf-0.5) warns.push(`${esc(S.goal.account)} has ${rs(gb)}, but your ${goalList().length>1?"goals":esc((S.goal.name||"goal").toLowerCase())} fund is ${rs(cf)}. ${rs(cf-gb)} of ${esc((S.goal.name||"goal").toLowerCase())} money was used. If you took it out on purpose, add a ${esc(S.goal.name||"goal")} entry with a minus amount, like -${Math.round(cf-gb)}.`);
+  if(cf>0 && gb < cf-0.5) warns.push(`${esc(wallet(S.goal.account))} has ${rs(gb)}, but your ${goalList().length>1?"goals":esc((S.goal.name||"goal").toLowerCase())} fund is ${rs(cf)}. ${rs(cf-gb)} of ${esc((S.goal.name||"goal").toLowerCase())} money was used. If you took it out on purpose, add a ${esc(S.goal.name||"goal")} entry with a minus amount, like -${Math.round(cf-gb)}.`);
   Object.entries(b).forEach(([n,v])=>{ if(v< -0.5) warns.push(`${esc(wallet(n))} is below zero (${rs(v)}). An entry may be missing or in the wrong account. You can also fix it in Settings with a correction.`); });
   const WCOL=["linear-gradient(160deg,#2F3833,#1C2320)","linear-gradient(160deg,#B49A78,#97805F)","linear-gradient(160deg,#3B4A5A,#2A3541)","linear-gradient(160deg,#8A5A44,#6E4636)","linear-gradient(160deg,#5E6B52,#47523D)"];
-  const cards=daily.map((a,i)=>({k:a.name, name:wallet(a.name), sub:a.name.toLowerCase()==="cash"?"Cash":"", amt:b[a.name]||0, bg:a.name.toLowerCase()==="cash"?WCOL[1]:WCOL[i===0?0:(i+1)%WCOL.length]}));
+  const cards=daily.map((a,i)=>({k:a.name, name:wallet(a.name), sub:shared(a.name)?"Without savings":a.name.toLowerCase()==="cash"?"Cash":"", amt:(b[a.name]||0)-(shared(a.name)?cf:0), bg:a.name.toLowerCase()==="cash"?WCOL[1]:WCOL[i===0?0:(i+1)%WCOL.length]}));
   const GL=goalList(), multi=GL.length>1;
-  cards.push({k:"__goal", name:multi?"Goals · "+GL.length:"Goals", sub:S.goal.account, amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
+  if(!goalOff()) cards.push({k:"__goal", name:multi?"Goals · "+GL.length:"Goals", sub:wallet(S.goal.account), amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
   const def=acctNames().includes(S.defaults.spent)?S.defaults.spent:(cards[0]&&cards[0].k);
   const front=cards.some(c=>c.k===frontCard)?frontCard:def;
   const order=cards.filter(c=>c.k!==front).concat(cards.filter(c=>c.k===front));
@@ -1005,7 +1011,7 @@ function viewMonth(){
   ${(()=>{ const c=checkCat(); if(!c) return ""; const l=E.filter(e=>e.type==="Spent" && hasCat(e,c)); if(!l.length) return "";
     return `<section class="card" data-checklater="1" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
   ${chart}
-  <div class="card" style="background:var(--car-soft)"><div class="row"><p class="lab" style="color:var(--ink)">Saved for ${goalList().length>1?"goals":esc((S.goal.name||"goal").toLowerCase())} this month</p><p class="val num c-car" style="margin:0">${rs(sv)}</p></div></div>
+  ${goalOff()?"":`<div class="card" style="background:var(--car-soft)"><div class="row"><p class="lab" style="color:var(--ink)">Saved for goals this month</p><p class="val num c-car" style="margin:0">${rs(sv)}</p></div></div>`}
   ${(()=>{ const r=mon.filter(e=>e.type==="Received" && !e.pass); if(!r.length) return ""; const g={}; r.forEach(e=>{ const k=e.src||"Not set"; g[k]=(g[k]||0)+(+e.amount||0); });
     return `<div class="secthead"><h2>Where it came from</h2></div><section class="card" style="padding-block:6px">${Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="catrow" style="cursor:default"><span style="font-weight:600">${esc(k)}</span><span class="num c-in" style="font-weight:700">${rs(v)} <span class="muted small">${Math.round(inn?v/inn*100:0)}%</span></span><span class="bar"><i style="width:${Math.max(inn?v/inn*100:0,2)}%;background:var(--money)"></i></span></div>`).join("")}</section>`; })()}
   <div class="secthead"><h2>Where it went</h2>${cats.length?`<span class="small muted">Tap one for entries and limit</span>`:""}</div>${multi?`<p class="note" style="margin-top:-4px">Entries with two or more categories show under each one, so these can add up to more than Money out. Money out counts them once.</p>`:""}
@@ -1058,7 +1064,7 @@ function openGoalSheet(id){
     <div class="field"><label for="gn">Name</label><input id="gn" autocomplete="off" placeholder="Umrah, Emergency fund…" value="${esc(G.name||"")}"></div>
     <div class="field"><label for="gp">Target amount (Rs)</label><input id="gp" class="amount num" inputmode="decimal" placeholder="4,00,000" value="${esc(G.price?String(G.price):"")}"></div>
     <div class="field"><label for="gt">Reach it by (optional)</label><input id="gt" type="date" value="${esc(G.target||"")}"></div>
-    <p class="note">Kept in ${esc(S.goal.account)}, like your other goals.</p>
+    <p class="note">Kept in ${esc(wallet(S.goal.account))}, like your other goals.</p>
     <p class="err" id="gErr"></p>
     <button class="primary" id="gsSave" data-gid="${esc(id||"")}">${isNew?"Add goal":"Save changes"}</button>
     ${!isNew && id!=="car"?`<button class="ghost danger" id="gsDel" data-gid="${esc(id)}">${f>0.5?"Delete goal (move its "+rs(f)+" out first)":"Delete goal"}</button>`:""}
@@ -1140,16 +1146,16 @@ function viewSettings(){
   <form id="setForm" style="display:flex;flex-direction:column;gap:10px">
     ${sec("acc","Accounts and balances",acctNames().map(wallet).join(", "),`
     <p class="flab">Balances on ${esc(shortDate(s.startDate))} ${esc(s.startDate.slice(0,4))} (when you started)</p>
-    ${s.accounts.map((a,i)=>`<div class="setrow"><input id="acc-n-${i}" value="${esc(a.name)}" aria-label="Account name"><input id="acc-o-${i}" inputmode="decimal" value="${esc(a.open)}" aria-label="Balance"></div>`).join("")}
+    ${s.accounts.map((a,i)=>`<div class="setrow" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 36px"><input id="acc-n-${i}" value="${esc(a.name)}" aria-label="Account name"><input id="acc-o-${i}" inputmode="decimal" value="${esc(a.open)}" aria-label="Balance"><button type="button" class="x" data-delacc="${i}" aria-label="Remove ${esc(wallet(a.name))}">×</button></div>`).join("")}
     <div class="setrow"><input id="acc-n-new" placeholder="New account, like JazzCash" aria-label="New account name"><input id="acc-o-new" inputmode="decimal" placeholder="0" aria-label="New account balance"></div>
     <button type="button" class="ghost" id="addAcc" style="background:var(--bg);color:var(--car);font-weight:600">+ Add account</button>
+    <p class="note">Tap × to remove an account. An account that already has entries, or holds your savings, can't be removed, so nothing goes missing.</p>
     <div class="field"><label for="startDate">Balances counted from</label><input type="date" id="startDate" value="${esc(s.startDate)}"></div>
     <p class="flab" style="margin-top:6px">Fix a balance (if the app and your bank differ)</p>
     ${s.accounts.map((a,i)=>`<div class="setrow"><span class="small">${esc(wallet(a.name))} correction</span><input id="acc-c-${i}" inputmode="decimal" value="${esc(a.corr||0)}" aria-label="${esc(a.name)} correction"></div>`).join("")}`)}
-    ${sec("goal",(s.goal.name||"Savings")+" goal",s.goal.price?lac(+s.goal.price):"",`
+    ${sec("goal","Goals",[s.goal.name||"",s.goal.price?lac(+s.goal.price):""].filter(Boolean).join(" · "),`
     <div class="setrow"><span class="small">Name</span><input id="g-name" value="${esc(s.goal.name)}"></div>
     <div class="setrow"><span class="small">Price</span><input id="g-price" inputmode="decimal" value="${esc(s.goal.price)}"></div>
-    <div class="setrow"><span class="small">Kept in</span>${sel("g-account",s.goal.account)}</div>
     <div class="setrow"><span class="small">Already saved before tracking</span><input id="g-already" inputmode="decimal" value="${esc(s.goal.already||0)}"></div>
     <div class="setrow"><span class="small">Target date (optional)</span><input type="date" id="g-target" value="${esc(s.goal.target||"")}"></div>`)}
     ${sec("bills","Monthly bills",s.bills.length+" bill"+(s.bills.length===1?"":"s"),`
@@ -1161,12 +1167,15 @@ function viewSettings(){
     ${sec("cats","Categories and limits",s.categories.length+" categories",`
     <p class="note">A limit is optional. The Month screen warns you when a category gets close to its limit.</p>
     ${s.categories.map((c,i)=>`<div class="billrow" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 36px"><input id="c-n-${i}" value="${esc(c)}" aria-label="Category"><input id="c-l-${i}" inputmode="decimal" value="${esc(s.limits[c]||"")}" placeholder="no limit" aria-label="Limit"><button type="button" class="x" data-delcat="${i}" aria-label="Remove ${esc(c)}">×</button></div>`).join("")}
-    <input id="c-new" placeholder="New category" aria-label="New category">`)}
-    ${sec("def","Starting accounts","Spent from "+wallet(s.defaults.spent),`
-    <p class="note">Which account is picked first when you add an entry. You can always change it while adding.</p>
-    <div class="setrow"><span class="small">Spending comes from</span>${sel("d-spent",s.defaults.spent)}</div>
+    <input id="c-new" placeholder="New category" aria-label="New category">
+    <button type="button" class="ghost" id="addCat" style="background:var(--bg);color:var(--car);font-weight:600">+ Add category</button>`)}
+    ${sec("def","Main and savings accounts","Main: "+wallet(s.defaults.spent)+" · Savings: "+wallet(s.goal.account),`
+    <p class="note">Your main account is the one you spend from and get paid into. It is picked first when you add an entry, and you can always change it while adding.</p>
+    <div class="setrow"><span class="small">Main account (spending)</span>${sel("d-spent",s.defaults.spent)}</div>
     <div class="setrow"><span class="small">Money in goes to</span>${sel("d-received",s.defaults.received)}</div>
-    <div class="setrow"><span class="small">Goal savings come from</span>${sel("d-saveFrom",s.defaults.saveFrom)}</div>`)}
+    <p class="note">Your savings account holds your goal money. It shows on the Goals card and is kept apart from your spending money.</p>
+    <div class="setrow"><span class="small">Savings account</span>${sel("g-account",s.goal.account)}</div>
+    <div class="setrow"><span class="small">Savings come from</span>${sel("d-saveFrom",s.defaults.saveFrom)}</div>`)}
     ${sec("lock","PIN lock",s.pinHash?"On":"Off",`
     <div class="setrow"><span class="small">${s.pinHash?"PIN is on. New PIN (leave empty to keep)":"PIN (4 to 8 numbers, optional)"}</span><input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${s.pinHash?"••••":"none"}"></div>
     ${s.pinHash?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinOff" style="width:auto"> Turn the PIN off</label>`:""}
@@ -1175,7 +1184,7 @@ function viewSettings(){
     <div class="lopts">${[["0","Immediately"],["60","After 1 minute"],["300","After 5 minutes"],["close","Only when I close it"]].map(([v,l])=>`<button type="button" class="lopt" data-lockafter="${v}"><span>${l}</span><span class="tick">${lockAfter()===v?"✓":""}</span></button>`).join("")}</div>
     <p class="note">"Immediately" works like WhatsApp: every time you leave Kifaya, it locks. When you come back, ${faceId()?"tap once and "+BIO+" opens it":"type your PIN"}.</p>`:""}`)}
     <p class="err" id="setErr"></p>
-    <button class="primary" type="submit">Save settings</button>
+    <button class="primary savebar" type="submit">Save settings</button>
   </form>
   <section class="card" style="display:flex;flex-direction:column;gap:10px">
     <h2>Excel</h2>
@@ -1233,17 +1242,20 @@ function viewSetup(){
     <h2>How much money do you have right now?</h2>
     <div class="field"><label for="su-bank">In your bank account (Rs)</label><input id="su-bank" class="num" inputmode="decimal" placeholder="0" value="${v("bank")}"></div>
     <div class="field"><label for="su-cash">Cash in your wallet (Rs)</label><input id="su-cash" class="num" inputmode="decimal" placeholder="0" value="${v("cash")}"></div>
-    <p class="note">Leave a box empty if it's zero. You can add more accounts later in Settings.</p>
+    <div class="field"><label>You spend mostly from</label><div class="chips" role="group" aria-label="You spend mostly from">${["Bank","Wallet"].map(k=>`<button type="button" class="chip" data-gmain="${k}" aria-pressed="${(setup.gmain||"Bank")===k}">${k}</button>`).join("")}</div></div>
+    <p class="note">Leave a box empty if it's zero. You can add more accounts, like JazzCash, later in Settings.</p>
     <p class="err" id="suErr"></p>
     <div class="btnrow"><button class="ghost" data-setup="back">Back</button><button class="primary" data-setup="next">Next</button></div>
   </section>`;
   if(st===2) return `<section class="setup">${dots}
     <h2>Saving for something?</h2>
     <p class="note">Optional. A car, a phone, a trip, anything. The app keeps this money separate from your spending money.</p>
-    <div class="field"><label for="su-gname">What for</label><input id="su-gname" placeholder="Car" value="${v("gname")}"></div>
+    <div class="field"><label for="su-gname">What for</label><input id="su-gname" placeholder="Car, phone, trip" value="${v("gname")}"></div>
     <div class="field"><label for="su-gprice">Price (Rs)</label><input id="su-gprice" class="num" inputmode="decimal" placeholder="30 lac" value="${v("gprice")}"></div>
     <div class="field"><label for="su-gsaved">Saved so far (Rs)</label><input id="su-gsaved" class="num" inputmode="decimal" placeholder="0" value="${v("gsaved")}"></div>
-    <div class="field"><label for="su-gplace">Where you keep these savings</label><input id="su-gplace" placeholder="NayaPay, JazzCash, savings account" value="${v("gplace")}"></div>
+    <div class="field"><label>Where you keep these savings</label><div class="chips" role="group" aria-label="Where you keep these savings">${["Bank","Wallet","JazzCash","NayaPay","Easypaisa","Other"].map(k=>`<button type="button" class="chip" data-gplace="${k}" aria-pressed="${setup.gplace===k}">${k}</button>`).join("")}</div>
+      ${setup.gplace==="Other"?`<input id="su-gother" placeholder="Account name, like Meezan savings" value="${v("gother")}" aria-label="Savings account name" style="margin-top:8px">`:""}
+      <p class="small muted" style="margin-top:6px">Bank and Wallet use the cards you already have. Any other choice gets its own card.</p></div>
     <p class="err" id="suErr"></p>
     <div class="btnrow"><button class="ghost" data-setup="back">Back</button><button class="primary" data-setup="next">Next</button></div>
   </section>`;
@@ -1255,22 +1267,27 @@ function viewSetup(){
     <div class="btnrow"><button class="ghost" data-setup="back">Back</button><button class="primary" data-setup="finish">Finish</button></div>
   </section>`;
 }
-function readSetup(){ ["bank","cash","gname","gprice","gsaved","gplace","pin"].forEach(k=>{ const el=document.getElementById("su-"+k); if(el) setup[k]=el.value.trim(); }); }
+function readSetup(){ ["bank","cash","gname","gprice","gsaved","gother","pin"].forEach(k=>{ const el=document.getElementById("su-"+k); if(el) setup[k]=el.value.trim(); }); }
 async function setupAction(a){
   readSetup(); const err=document.getElementById("suErr"), n=k=>{ const x=parseAmount(setup[k]); return isFinite(x)?x:0; };
   if(a==="back"){ setup.step=Math.max(0,setup.step-1); render(); return; }
   if(a==="next"){
     if(setup.step===1 && ["bank","cash"].some(k=>setup[k] && !isFinite(parseAmount(setup[k])))){ err.textContent="Type numbers only, like 25000 or 1.5 lac"; return; }
     if(setup.step===2 && ["gprice","gsaved"].some(k=>setup[k] && !isFinite(parseAmount(setup[k])))){ err.textContent="Type numbers only, like 30 lac"; return; }
+    if(setup.step===2 && setup.gplace==="Other" && !setup.gother){ err.textContent="Type the name of the account where you keep these savings"; return; }
     setup.step++; render(); setTimeout(()=>{ const f=document.querySelector(".setup input"); if(f) f.focus(); },60); return; }
   if(setup.pin && !/^\d{4,8}$/.test(setup.pin)){ err.textContent="The PIN must be 4 to 8 numbers, or leave it empty"; return; }
-  let place=(setup.gplace||"Savings").trim(); if(["bank","cash","wallet"].includes(place.toLowerCase())) place="Savings";
-  const saved=n("gsaved");
+  const saved=n("gsaved"), hasGoal=!!(setup.gname || n("gprice") || saved);
+  let place=(setup.gplace==="Other"?(setup.gother||""):(setup.gplace||"")).trim();
+  if(!place) place=hasGoal?"Savings":"Bank";
+  if(place.toLowerCase()==="bank") place="Bank"; if(["cash","wallet"].includes(place.toLowerCase())) place="Cash";
   const P=clone(DEFAULTS);
   P.startDate=todayStr();
-  P.accounts=[{name:"Bank",open:n("bank"),corr:0},{name:"Cash",open:n("cash"),corr:0},{name:place,open:saved,corr:0}];
-  P.goal={name:setup.gname||"Savings", price:n("gprice"), already:saved, target:"", account:place};
-  P.defaults={spent:"Bank", received:"Bank", saveFrom:"Bank", saveTo:place};
+  P.accounts=[{name:"Bank",open:n("bank"),corr:0},{name:"Cash",open:n("cash"),corr:0}];
+  if(place!=="Bank" && place!=="Cash") P.accounts.push({name:place,open:saved,corr:0});
+  P.goal={name:setup.gname||"Savings", price:n("gprice"), already:saved, target:"", account:place}; P.noGoal=!hasGoal;
+  const main=setup.gmain==="Wallet"?"Cash":"Bank";
+  P.defaults={spent:main, received:main, saveFrom:main, saveTo:place};
   if(setup.pin){ P.pinHash=await hashPin(setup.pin); unlocked=P.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} }
   try{ await profileRef.set(P); setup={step:0}; tab="home"; toast("All set. Tap + to add your first entry."); }
   catch(x){ err.textContent=writeError(x); }
@@ -1322,7 +1339,7 @@ function drawSheet(){
   const curTo=t==="Car"?(e.to||S.goal.account):e.to;
   host.innerHTML=`<div class="sheet" id="sheetBg"><div class="panel" role="dialog" aria-modal="true" aria-label="${sheet.editing?"Change entry":"Add entry"}">
     <div class="row"><h2>${sheet.editing?"Change entry":"Add"}</h2><button class="linkbtn" id="closeSheet">Close</button></div>
-    <div class="seg" role="group" aria-label="What happened">${["Spent","Received","Moved","Car","People"].map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===t}">${k==="Car"?(goalList().length>1?"Goal":esc(S.goal.name||"Goal")):k}</button>`).join("")}</div>
+    <div class="seg" role="group" aria-label="What happened">${["Spent","Received","Moved","Car","People"].filter(k=>k!=="Car"||!goalOff()||t==="Car").map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===t}">${k==="Car"?"Goal":k}</button>`).join("")}</div>
     ${t==="People"?`<div class="field"><span class="flab">What happened</span><div class="chips">${Object.entries(ACTS).map(([k,v])=>`<button type="button" class="chip" data-act="${k}" aria-pressed="${e.act===k}">${v[0]}</button>`).join("")}</div></div>
     <div class="field"><label for="who">Who</label><input id="who" autocomplete="off" placeholder="Name, like Ali" value="${esc(e.who||"")}">${people().length?`<div class="chips" style="margin-top:6px">${people().map(x=>`<button type="button" class="chip" data-who="${esc(x.name)}" aria-pressed="${(e.who||"").toLowerCase()===x.name.toLowerCase()}">${esc(x.name)}</button>`).join("")}</div>`:""}</div>`:""}
     <div class="field"><label for="amt">Amount (Rs)</label><input id="amt" class="amount num" inputmode="decimal" autocomplete="off" placeholder="500" value="${esc(e.amount)}"><p class="err" id="amtErr"></p></div>
@@ -1393,6 +1410,7 @@ async function saveSettings(ev){
   const R=x=>ren[x]||x;
   N.defaults={spent:R(v("d-spent")),received:R(v("d-received")),saveFrom:R(v("d-saveFrom")),saveTo:R(v("g-account"))};
   N.goal={name:v("g-name")||"Goal", price:num("g-price"), already:num("g-already"), target:v("g-target"), account:R(v("g-account"))};
+  N.noGoal=!!S.noGoal && !N.goal.price && !N.goal.already && N.goal.name===(S.goal.name||"Goal");
   const billRen={}; S.bills.forEach((b,i)=>{ const n=v("b-n-"+i); if(b.name && n && n!==b.name) billRen[b.name]=n; });
   N.bills=S.bills.map((b,i)=>({name:v("b-n-"+i), amount:num("b-a-"+i), day:parseInt(v("b-d-"+i))||"", cat:v("b-c-"+i), word:v("b-w-"+i)})).filter(b=>b.name);
   const cats=[], limits={};
@@ -1462,11 +1480,27 @@ document.addEventListener("pointermove",ev=>{ if(holdT && holdXY && Math.hypot(e
 ["pointerup","pointercancel","scroll"].forEach(n=>document.addEventListener(n,()=>{ clearTimeout(holdT); holdT=null; },true));
 document.addEventListener("contextmenu",ev=>{ if(ev.target.closest(".item[data-edit]")) ev.preventDefault(); });
 document.addEventListener("click",ev=>{ if(holdFired){ holdFired=false; ev.preventDefault(); ev.stopImmediatePropagation(); } },true);
+async function removeFrom(list,i){ /* remove a bill or a category and save at once */
+  const N=clone(S), it=N[list][i]; if(it==null) return;
+  if(list==="categories" && N.categories.length<=1){ toast("Keep at least one category"); return; }
+  N[list].splice(i,1); if(list==="categories" && N.limits) delete N.limits[it];
+  try{ await profileRef.set(N); S=N; render(); toast((list==="bills"?(it.name||"Bill"):it)+" removed"); }catch(x){ toast(writeError(x)); }
+}
+async function removeAccount(i){
+  const a=S.accounts[i]; if(!a) return; const name=a.name, w=wallet(name);
+  if(S.accounts.length<=1){ toast("Keep at least one account"); return; }
+  if(E.some(e=>e.from===name||e.to===name)){ toast(w+" has entries, so it can't be removed"); return; }
+  if(!goalOff() && goalList().some(g=>g.account===name)){ toast("Your savings are kept in "+w+". Pick another savings account first."); return; }
+  const N=clone(S); N.accounts.splice(i,1); const first=N.accounts[0].name;
+  ["spent","received","saveFrom","saveTo"].forEach(k=>{ if(N.defaults[k]===name) N.defaults[k]=first; });
+  if(N.goal.account===name) N.goal.account=first;
+  try{ await profileRef.set(N); S=N; openSecs.add("acc"); render(); toast(w+" removed"); }catch(x){ toast(writeError(x)); }
+}
 function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{h.innerHTML="";},2600); }
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("#addAcc,[data-lockafter],#usePin,#useFace,#lockArea,[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("#addCat,[data-delacc],[data-gplace],[data-gmain],#addAcc,[data-lockafter],#usePin,#useFace,#lockArea,[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
   if(t.dataset.goal){ carGoal=t.dataset.goal; goalsOpen=false; tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); return; }
   if(t.id==="goalsDone"){ goalsOpen=false; render(); return; }
@@ -1535,11 +1569,15 @@ document.addEventListener("click", ev=>{
   if(t.dataset.cat!==undefined){ readSheetInputs(); const L=(sheet.e.cats||[]).slice(), c=t.dataset.cat, i=L.indexOf(c); if(i>=0) L.splice(i,1); else L.push(c); sheet.e.cats=L; sheet.e.cat=L[0]||""; sheet.e.feeTxt=null; if(sheet.e.bill && sheet.e.bill!=="-" && !billsForCat(L).some(b=>b.name===sheet.e.bill)) sheet.e.bill=""; drawSheet(); return; }
   if(t.dataset.from){ readSheetInputs(); sheet.e.from=t.dataset.from; drawSheet(); return; }
   if(t.dataset.to){ readSheetInputs(); sheet.e.to=t.dataset.to; drawSheet(); return; }
-  if(t.dataset.delbill!==undefined){ S.bills.splice(+t.dataset.delbill,1); render(); toast("Removed. Tap Save settings to keep it."); return; }
-  if(t.dataset.delcat!==undefined){ S.categories.splice(+t.dataset.delcat,1); render(); toast("Removed. Tap Save settings to keep it."); return; }
+  if(t.dataset.delbill!==undefined){ removeFrom("bills",+t.dataset.delbill); return; }
+  if(t.dataset.delcat!==undefined){ removeFrom("categories",+t.dataset.delcat); return; }
   if(t.id==="closeSheet"){ const back=sheet&&sheet.back; sheet=null; drawSheet(); if(back){ voice=back; drawVoice(); } return; }
   if(t.id==="saveBtn"){ saveSheet(); return; }
   if(t.id==="delBtn"){ deleteEntry(); return; }
+  if(t.dataset.delacc!=null){ removeAccount(+t.dataset.delacc); return; }
+  if(t.dataset.gmain!=null){ readSetup(); setup.gmain=t.dataset.gmain; render(); return; }
+  if(t.dataset.gplace!=null){ readSetup(); setup.gplace=t.dataset.gplace; render(); if(t.dataset.gplace==="Other") setTimeout(()=>{ const f=document.getElementById("su-gother"); if(f) f.focus(); },60); return; }
+  if(t.id==="addCat"){ const n=document.getElementById("c-new"); if(!n.value.trim()){ toast("Type the category name first"); n.focus(); return; } openSecs.add("cats"); document.getElementById("setForm").requestSubmit(); return; }
   if(t.id==="addAcc"){ const n=document.getElementById("acc-n-new"); if(!n.value.trim()){ toast("Type the account name first"); n.focus(); return; } openSecs.add("acc"); document.getElementById("setForm").requestSubmit(); return; }
   if(t.id==="addBill"){ S.bills.push({name:"New bill",amount:0,day:"",cat:"Bills",word:""}); render(); return; }
   if(t.id==="dlx"){ downloadExcel(); return; }
