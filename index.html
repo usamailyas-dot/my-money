@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.26 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.27 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -420,6 +420,8 @@ body{overflow-x:clip} /* clip, not hidden, so sticky bars keep working */
 .pamt span{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .paybtn{background:var(--bg);border:0;color:var(--ink);font-weight:600;font-size:13px;padding:7px 12px}
 .savebar{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.updbar{position:fixed;left:16px;right:16px;top:calc(10px + env(safe-area-inset-top,0px));z-index:70;max-width:520px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:14px;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 18px;font:500 15px var(--font);box-shadow:0 10px 30px rgba(0,0,0,.25);animation:hmIn .2s ease-out}
+.updbar button{background:none;border:0;color:inherit;font:600 15px var(--font);height:40px;padding:0 14px;border-radius:10px;cursor:pointer}
 .lockw{min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 30px;text-align:center;cursor:default}
 .lockw .lk{width:76px;height:76px;color:var(--car)}
 .lockw .lt{font-size:28px;font-weight:700;letter-spacing:-.02em}
@@ -1228,6 +1230,17 @@ function viewSettings(){
     <li><b>${esc(S.goal.name||"Goal")}</b> shows how much to save each month to reach your goal.</li>
     ${PHONE?`<li><b>No internet?</b> No problem. Everything works offline and is saved on this phone.</li><li><b>Backup</b> once a month to iCloud Drive, so a lost phone doesn't mean lost money records.</li>`:""}
   </ul></div></details>`;
+}
+/* a new version was published: offer a one-tap refresh instead of closing and reopening the app */
+if(PHONE && "serviceWorker" in navigator){
+  const hadCtl=!!navigator.serviceWorker.controller; let shown=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hadCtl||shown) return; shown=true;
+    const d=document.createElement("div"); d.className="updbar"; d.id="updBar"; d.setAttribute("role","status");
+    d.innerHTML='<span>New version of Kifaya</span><button type="button" id="updBtn">Refresh</button>'; document.body.appendChild(d);
+    document.getElementById("updBtn").addEventListener("click",()=>{ location.reload(); }); });
+  const look=()=>{ navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.update(); }).catch(()=>{}); };
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) look(); });
+  setInterval(()=>{ if(!document.hidden) look(); }, 30*60*1000);
 }
 function checkBuild(){ if(!PHONE) return; try{ const b=localStorage.getItem("mm.build"), now=window.__BUILD__||""; localStorage.setItem("mm.build", now); if(b && b!==now) setTimeout(()=>toast("Kifaya was updated to version "+now),400); }catch(e){} }
 function standalone(){ try{ return matchMedia("(display-mode: standalone)").matches || !!navigator.standalone; }catch(e){ return false; } }
