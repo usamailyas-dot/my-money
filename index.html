@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.18 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.19 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -357,6 +357,26 @@ input,select,#vtext{border:0;background:var(--surface);border-radius:10px;font-f
 .mchart text.val{fill:var(--ink);font-weight:600;font-size:12px}
 .mchart text.mcur{fill:var(--ink);font-weight:600}
 .passchip{align-self:flex-start}
+.gpanel2{border-radius:22px;padding:16px 18px 6px;color:#fff;box-shadow:var(--lift);display:flex;flex-direction:column}
+.gpanel2 .r{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.gpanel2 .gsub{font-size:13px;opacity:.75;margin-top:8px}
+.gpanel2 .amt{font-size:32px;font-weight:600;letter-spacing:-.025em;margin:2px 0 6px;font-variant-numeric:tabular-nums}
+.gpanel2 .amt small{font-size:.5em;color:rgba(255,255,255,.7);margin-right:4px;font-weight:500}
+.gdone{background:none;border:0;color:#fff;opacity:.85;font:500 15px var(--font);cursor:pointer;padding:4px}
+.grow{display:block;width:100%;text-align:left;background:none;border:0;border-top:.5px solid rgba(255,255,255,.18);color:#fff;font:inherit;padding:12px 0;cursor:pointer}
+.grow .r{font-size:16px}.grow .r span:last-child{font-variant-numeric:tabular-nums}
+.gbar{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.22);margin-top:8px;overflow:hidden}.gbar i{display:block;height:100%;background:#fff;border-radius:2px}
+.gfoot{display:flex;justify-content:space-between;font-size:12.5px;opacity:.75;margin-top:5px}
+.gnew{text-align:center;font-weight:600;padding:13px 0 10px}
+.catrow{padding:12px 0}
+.catrow+.catrow,.catlist+.catrow{border-top:.5px solid var(--line)}
+.catrow .bar{height:6px}
+.catrow .bar>i.lim-ok,.catrow .bar>i.lim-none{background:var(--ink) !important;opacity:.8}
+.catrow .bar>i.lim-warn{background:#B7791F !important;opacity:1}
+.catrow .bar>i.lim-over{background:var(--late) !important;opacity:1}
+.limrow{grid-column:1/-1;display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.lim-t.warn{color:#B7791F}.lim-t.over{color:var(--late)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .catrow .bar>i.lim-warn{background:#E0A43A !important} :root:not([data-theme="light"]) .lim-t.warn{color:#E0A43A}}
 /* 1.17 Wallet spacing */
 body{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
 :root{--glass:rgba(255,255,255,.78);--glassline:rgba(60,60,67,.12)}
@@ -649,6 +669,7 @@ function vEntry(words){
     if(isFrom(f)){ from=accs[0]; to=accs[0]===bankN?(names.includes("Cash")?"Cash":""):bankN; } else { to=accs[0]; from=accs[0]===bankN?"":bankN; } }
   else if(type==="Moved"){ from=accs[0]||(names.includes("Bank")?"Bank":names[0]); to=accs[1]||(accs[0]&&accs[0]!=="Cash"&&names.includes("Cash")?"Cash":(from==="Cash"?(names.find(n=>n!=="Cash")||""):"Cash")); if(accs.length===1 && accs[0]==="Cash" && vHas(str,["atm","एटीएम","nikale","निकाले","نکالے"])){ from=names.includes("Bank")?"Bank":names[0]; to="Cash"; } }
   else if(type==="Car"){ to=S.goal.account; from=accs.find(n=>n!==to)||S.defaults.saveFrom; }
+  let goal=""; if(type==="Car"||(type==="Moved"&&vHas(str,["goal","fund","saved","save","saving"]))){ const hit=(S.goals||[]).find(g=>g.name && new RegExp("(^|\\s)"+norm(g.name).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(\\s|$)").test(str)); if(hit){ goal=hit.id; type="Car"; to=S.goal.account; if(!from||from===to) from=accs.find(n=>n!==to)||S.defaults.saveFrom; } }
   else if(type==="Spent" && cat===catOf("Bank fees") && cat && names.includes("Bank")) from=accs.find(n=>n!=="Cash")||"Bank";
   else from=accs[0]||(type==="Received"?S.defaults.received:S.defaults.spent);
   if(type==="Moved" && to && to===S.goal.account && from!==S.goal.account) type="Car";
@@ -664,7 +685,7 @@ function vEntry(words){
   const pass=(type==="Spent"||type==="Received") && vHas(str,["not my money","passing through","pass through","someone else's money","for someone else"]);
   const bare=!nn && !found.length && !vHas(str,Object.values(TYPEW).flat()) && type==="Spent" && (cat==="Other"||!cat) && !forced;
   const n3=pass?nn.replace(/(^|\s)(not|passing|through|pass|someone|else's|else)(?=\s|$)/gi," ").replace(/\s+/g," ").trim():nn;
-  return {type,cat,bill,src,from,to,bare,pass:!!pass,note:n3?n3.charAt(0).toUpperCase()+n3.slice(1):""};
+  return {type,cat,bill,src,from,to,bare,goal,pass:!!pass,note:n3?n3.charAt(0).toUpperCase()+n3.slice(1):""};
 }
 function parseSpoken(text){
   let src=String(text||"");
@@ -692,7 +713,7 @@ let voice=null, rec=null;
 function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1); }
 function vLang(){ try{ return localStorage.getItem("mm.vlang")||"ur"; }catch(e){ return "ur"; } }
 function openVoice(listen){ voice={text:"",items:[],listening:false,msg:""}; drawVoice(); if(listen) setTimeout(startRec,150); }
-function vItemRow(e,i){ const what=e.pass?"Not my money":e.type==="Spent"?e.cat:e.type==="Received"?(e.src?"Money in · "+e.src:"Money in"):e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():"Moved";
+function vItemRow(e,i){ const what=e.pass?"Not my money":e.type==="Spent"?e.cat:e.type==="Received"?(e.src?"Money in · "+e.src:"Money in"):e.type==="Car"?"Saved for "+goalWord(e).toLowerCase():"Moved";
   const sub=[e.date!==todayStr()?shortDate(e.date):"", e.type==="Moved"||e.type==="Car"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
   return `<div class="vrow"><span class="dot ${e.type==="Spent"?"d-out":e.type==="Received"?"d-in":e.type==="Car"?"d-car":"d-mv"}" aria-hidden="true">${e.type==="Spent"?"−":e.type==="Received"?"+":e.type==="Car"?"★":"⇄"}</span><span class="txt"><span class="t1">${esc(what)} · ${rs(e.amount)}</span><span class="t2">${esc(sub)}</span></span><button class="x" data-vedit="${i}" aria-label="Change">✎</button><button class="x" data-vdel="${i}" aria-label="Remove">×</button></div>`; }
 function drawVoice(){
@@ -726,7 +747,7 @@ function stopRec(){ if(!voice) return; voice.listening=false; try{ rec && rec.st
 async function saveVoice(){
   const btn=document.getElementById("vSave"); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   const pasted=String(voice.text).indexOf("•")>=0; let n=0;
-  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:e.type==="Spent"?(e.bill||""):"", src:e.type==="Received"?(e.src||""):"", pass:!!e.pass, from:e.from||"", to:(e.type==="Moved"||e.type==="Car")?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
+  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:e.type==="Spent"?(e.bill||""):"", src:e.type==="Received"?(e.src||""):"", pass:!!e.pass, goal:e.type==="Car"?(e.goal||"car"):"", from:e.from||"", to:(e.type==="Moved"||e.type==="Car")?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
     if(pasted){ try{ await navigator.clipboard.writeText(""); }catch(x){} }
     voice=null; drawVoice(); toast("Saved "+n+" entr"+(n===1?"y":"ies")); }
   catch(x){ if(btn){ btn.disabled=false; btn.textContent="Save all"; } document.getElementById("vErr").textContent=writeError(x); }
@@ -750,7 +771,11 @@ function balances(){
     else { if(e.from in b) b[e.from]-=a; if(e.to in b) b[e.to]+=a; } });
   return b;
 }
-function carFund(){ return (+S.goal.already||0)+E.filter(e=>e.type==="Car").reduce((s,e)=>s+(+e.amount||0),0); }
+function goalList(){ return [Object.assign({id:"car"},S.goal)].concat((S.goals||[]).map(g=>Object.assign({account:S.goal.account},g))); }
+function goalById(id){ return goalList().find(g=>g.id===(id||"car"))||goalList()[0]; }
+function goalFund(id){ id=id||"car"; return (id==="car"?(+S.goal.already||0):0)+E.filter(e=>e.type==="Car" && (e.goal||"car")===id).reduce((s,e)=>s+(+e.amount||0),0); }
+function carFund(){ return goalList().reduce((s,g)=>s+goalFund(g.id),0); }
+function goalWord(e){ return (goalById(e&&e.goal).name||"goal"); }
 function moneyIHave(b){ const total=Object.values(b).reduce((s,v)=>s+v,0); const g=b[S.goal.account]||0; return total-Math.max(0,Math.min(g,carFund())); }
 function people(){ const P={}; E.forEach(e=>{ if(e.type!=="Lent" && e.type!=="Borrowed") return; const w=(e.who||"").trim()||"Someone", k=w.toLowerCase();
   P[k]=P[k]||{name:w,net:0}; P[k].net += (e.type==="Lent"?1:-1)*(+e.amount||0); }); return Object.values(P); }
@@ -841,7 +866,7 @@ function entryRow(e){
     return `<button class="item" data-edit="${esc(e.id)}"><span class="dot d-mv" aria-hidden="true">${out?"↗":"↙"}</span><span class="txt"><span class="t1">${esc(what)}</span><span class="t2">${esc(sub)}</span></span><span class="amt num c-mv">${out?"−":"+"}${rs(Math.abs(a))}</span></button>`; }
   const cls={Spent:"c-out",Received:"c-in",Moved:"c-mv",Car:"c-car"}[e.type];
   const dot={Spent:["d-out","−"],Received:["d-in","+"],Moved:["d-mv","⇄"],Car:["d-car","★"]}[e.type];
-  const what = e.pass ? (e.type==="Received"?"Not my money · in":"Not my money · out") : e.type==="Spent" ? ecats(e).join(" + ") : e.type==="Received" ? (e.note||"Money in") : e.type==="Moved" ? "Moved" : "Saved for "+(S.goal.name||"goal").toLowerCase();
+  const what = e.pass ? (e.type==="Received"?"Not my money · in":"Not my money · out") : e.type==="Spent" ? ecats(e).join(" + ") : e.type==="Received" ? (e.note||"Money in") : e.type==="Moved" ? "Moved" : "Saved for "+goalWord(e).toLowerCase();
   const sub = [shortDate(e.date),
     e.type==="Received" && e.src ? e.src : "",
     e.type==="Spent" ? "from "+wallet(e.from||"") : e.type==="Received" ? "into "+wallet(e.from||"") : wallet(e.from||"")+" → "+wallet(e.to||""),
@@ -860,11 +885,12 @@ function viewHome(){
   const unpaidSum=unpaid.reduce((s,[x])=>s+billAmt(x),0), unpaidVar=varies(unpaid);
   const warns=[];
   const gb=b[S.goal.account]||0;
-  if(cf>0 && gb < cf-0.5) warns.push(`${esc(S.goal.account)} has ${rs(gb)}, but your ${esc((S.goal.name||"goal").toLowerCase())} fund is ${rs(cf)}. ${rs(cf-gb)} of ${esc((S.goal.name||"goal").toLowerCase())} money was used. If you took it out on purpose, add a ${esc(S.goal.name||"goal")} entry with a minus amount, like -${Math.round(cf-gb)}.`);
+  if(cf>0 && gb < cf-0.5) warns.push(`${esc(S.goal.account)} has ${rs(gb)}, but your ${goalList().length>1?"goals":esc((S.goal.name||"goal").toLowerCase())} fund is ${rs(cf)}. ${rs(cf-gb)} of ${esc((S.goal.name||"goal").toLowerCase())} money was used. If you took it out on purpose, add a ${esc(S.goal.name||"goal")} entry with a minus amount, like -${Math.round(cf-gb)}.`);
   Object.entries(b).forEach(([n,v])=>{ if(v< -0.5) warns.push(`${esc(wallet(n))} is below zero (${rs(v)}). An entry may be missing or in the wrong account. You can also fix it in Settings with a correction.`); });
   const WCOL=["linear-gradient(160deg,#2F3833,#1C2320)","linear-gradient(160deg,#B49A78,#97805F)","linear-gradient(160deg,#3B4A5A,#2A3541)","linear-gradient(160deg,#8A5A44,#6E4636)","linear-gradient(160deg,#5E6B52,#47523D)"];
   const cards=daily.map((a,i)=>({k:a.name, name:wallet(a.name), sub:a.name.toLowerCase()==="cash"?"Cash":"", amt:b[a.name]||0, bg:a.name.toLowerCase()==="cash"?WCOL[1]:WCOL[i===0?0:(i+1)%WCOL.length]}));
-  cards.push({k:"__goal", name:(S.goal.name||"Goal")+" fund", sub:S.goal.account, amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
+  const GL=goalList(), multi=GL.length>1;
+  cards.push({k:"__goal", name:multi?"Goals · "+GL.length:(S.goal.name||"Goal")+" fund", sub:S.goal.account, amt:cf, goal:true, bg:"linear-gradient(160deg,#2C5E48,#1F4D3A)"});
   const def=acctNames().includes(S.defaults.spent)?S.defaults.spent:(cards[0]&&cards[0].k);
   const front=cards.some(c=>c.k===frontCard)?frontCard:def;
   const order=cards.filter(c=>c.k!==front).concat(cards.filter(c=>c.k===front));
@@ -876,10 +902,17 @@ function viewHome(){
   return `
   <div class="htop"><h1 class="brand"><span class="kaf"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg></span>Kifaya</h1><div class="tbtns"><button class="gbtn" data-add="Spent" aria-label="Add an entry"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><span class="gpill"><button class="gbtn in" id="searchBtn" aria-label="Search all entries"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button><button class="gbtn in" data-tab="settings" aria-label="More"><svg viewBox="0 0 24 24" class="dots"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></span></div></div>
   <div class="htotal"><p class="lab">Money I have</p><p class="big"><small>Rs</small>${hid(have)}</p></div>
-  <div class="wstack" style="height:${stackH}px">${order.map((c,i)=>{ const isF=i===order.length-1;
+  ${goalsOpen?`<section class="gpanel2" style="background:linear-gradient(160deg,#2C5E48,#1F4D3A)">
+    <div class="r"><span style="font-size:18px">${multi?"Goals":esc(S.goal.name||"Goal")+" fund"}</span><button class="gdone" id="goalsDone">Done</button></div>
+    <p class="gsub">Saved in total · kept in ${esc(S.goal.account)}</p><p class="amt"><small>Rs</small>${hid(cf)}</p>
+    ${GL.map(g=>{ const f=goalFund(g.id), pr=+g.price||0, p=pr?Math.min(100,f/pr*100):0; return `<button class="grow" data-goal="${esc(g.id)}"><span class="r"><span>${esc(g.name||"Goal")}</span><span>${hid(f)}</span></span><span class="gbar"><i style="width:${Math.max(p,1.5)}%"></i></span><span class="gfoot"><span>${pr?p.toFixed(p<10?1:0)+"% of "+esc(lac(pr)):"No target set"}</span><span>›</span></span></button>`; }).join("")}
+    <button class="grow gnew" id="newGoal">+ New goal</button>
+  </section>`:""}
+  <div class="wstack" style="height:${goalsOpen?STRIP*(order.filter(c=>c.k!=="__goal").length-1)+H:stackH}px">${(goalsOpen?order.filter(c=>c.k!=="__goal"):order).map((c,i,arr)=>{
+    const isF=i===arr.length-1;
     return `<button class="wc" data-card="${esc(c.k)}" style="top:${i*STRIP}px;height:${H}px;background:${c.bg}" aria-label="${esc(c.name)}">
       <span class="r"><span>${esc(c.name)}${c.goal&&!isF?` <span class="dim">· ${esc(c.sub)}</span>`:""}</span>${isF?`<span class="dim">${esc(c.goal?c.sub:c.sub)}</span>`:`<span>${hid(c.amt)}</span>`}</span>
-      ${isF?`<span class="wbot"><span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to see the plan</span>`:`<span class="foot" style="display:block">${showAmt?"Tap the eye to hide":"Tap the eye to show amounts"}</span>`}</span><span class="eyec" id="eyeBtn" role="button" tabindex="0" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</span></span>`:""}
+      ${isF?`<span class="wbot"><span><span class="amt" style="display:block"><small>Rs</small>${hid(c.amt)}</span>${c.goal?(multi?`<span class="foot" style="display:block">${GL.length} goals · tap to open</span>`:`<span class="prog"><i style="width:${Math.max(pct,1)}%"></i></span><span class="foot" style="display:block">${pct.toFixed(1)}% of ${esc(lac(price))}${goalExtra>0&&showAmt?" · "+rs(goalExtra)+" extra in "+esc(S.goal.account):""} · tap to open</span>`):`<span class="foot" style="display:block">${showAmt?"Tap the eye to hide":"Tap the eye to show amounts"}</span>`}</span><span class="eyec" id="eyeBtn" role="button" tabindex="0" aria-label="${showAmt?"Hide amounts":"Show amounts"}" aria-pressed="${showAmt}">${EYE}</span></span>`:""}
     </button>`; }).join("")}</div>
   ${warns.map(w=>`<div class="card warnbox" role="alert"><b>Check this</b><p>${w}</p></div>`).join("")}
   ${PHONE && !standalone() ?`<section class="card"><b>Put Kifaya on your home screen</b><p class="small muted" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
@@ -894,6 +927,7 @@ function viewMonth(){
   const k=monthKey, mon=inMonth(k), out=sumType(mon,"Spent"), inn=sumType(mon,"Received"), sv=sumType(mon,"Car");
   const byCat={}; mon.filter(e=>e.type==="Spent" && !e.pass).forEach(e=>{ ecats(e).forEach(c=>{ byCat[c]=(byCat[c]||0)+(+e.amount||0); }); });
   const multi=mon.some(e=>e.type==="Spent" && ecats(e).length>1);
+  Object.keys(S.limits||{}).forEach(c=>{ if(S.categories.includes(c) && !(c in byCat) && +S.limits[c]>0) byCat[c]=0; });
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const bills=S.bills.map(x=>[x,billStatus(x,k)]);
   const left=bills.filter(([x,s])=>s.state!=="paid"), still=left.reduce((s,[x])=>s+billAmt(x),0), stillVar=varies(left);
@@ -915,14 +949,16 @@ function viewMonth(){
   ${(()=>{ const c=checkCat(); if(!c) return ""; const l=E.filter(e=>e.type==="Spent" && hasCat(e,c)); if(!l.length) return "";
     return `<section class="card" data-checklater="1" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
   ${chart}
-  <div class="card" style="background:var(--car-soft)"><div class="row"><p class="lab" style="color:var(--ink)">Saved for ${esc((S.goal.name||"goal").toLowerCase())} this month</p><p class="val num c-car" style="margin:0">${rs(sv)}</p></div></div>
+  <div class="card" style="background:var(--car-soft)"><div class="row"><p class="lab" style="color:var(--ink)">Saved for ${goalList().length>1?"goals":esc((S.goal.name||"goal").toLowerCase())} this month</p><p class="val num c-car" style="margin:0">${rs(sv)}</p></div></div>
   ${(()=>{ const r=mon.filter(e=>e.type==="Received" && !e.pass); if(!r.length) return ""; const g={}; r.forEach(e=>{ const k=e.src||"Not set"; g[k]=(g[k]||0)+(+e.amount||0); });
     return `<div class="secthead"><h2>Where it came from</h2></div><section class="card" style="padding-block:6px">${Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="catrow" style="cursor:default"><span style="font-weight:600">${esc(k)}</span><span class="num c-in" style="font-weight:700">${rs(v)} <span class="muted small">${Math.round(inn?v/inn*100:0)}%</span></span><span class="bar"><i style="width:${Math.max(inn?v/inn*100:0,2)}%;background:var(--money)"></i></span></div>`).join("")}</section>`; })()}
-  <div class="secthead"><h2>Where it went</h2>${cats.length?`<span class="small muted">Tap one to see its entries</span>`:""}</div>${multi?`<p class="note" style="margin-top:-4px">Entries with two or more categories show under each one, so these can add up to more than Money out. Money out counts them once.</p>`:""}
+  <div class="secthead"><h2>Where it went</h2>${cats.length?`<span class="small muted">Tap one for entries and limit</span>`:""}</div>${multi?`<p class="note" style="margin-top:-4px">Entries with two or more categories show under each one, so these can add up to more than Money out. Money out counts them once.</p>`:""}
   <section class="card" style="padding-block:6px">${cats.length?cats.map(([c,v],ci)=>{ const lim=+(S.limits[c]||0); const w=out?v/out*100:0; const open=openCat===c;
     const items=open?sorted(mon.filter(e=>e.type==="Spent" && !e.pass && hasCat(e,c))):[];
-    return `<button class="catrow" data-opencat="${esc(c)}" aria-expanded="${open}"><span style="font-weight:600">${open?"▾":"▸"} ${esc(c)}${lim?` <span class="pill ${v>lim?"p-late":v>=0.8*lim?"p-due":"p-ok"}">${v>lim?"Over limit":v>=0.8*lim?"Almost":"OK"} · ${rs(lim)}</span>`:""}</span><span class="num" style="font-weight:700">${rs(v)} <span class="muted small">${Math.round(w)}%</span></span><span class="bar"><i style="width:${Math.max(w,2)}%;background:${CATC[ci%CATC.length]}"></i></span></button>
-    ${open?`<div class="catlist"><p class="small muted">${items.length} entr${items.length===1?"y":"ies"} in ${esc(c)}</p><div class="list">${items.map(entryRow).join("")}</div></div>`:""}`;}).join(""):`<p class="empty">No spending in ${monthName(k)}.</p>`}</section>
+    const wa=+((S.warnAt||{})[c]||80)/100, st=lim?(v>lim?"over":v>=wa*lim?"warn":"ok"):"none", lw=lim?Math.min(100,v/lim*100):w;
+    const right=lim?(v>lim?`<span class="lim-t over">${rs(v-lim).replace("Rs ","")} over</span>`:v>=wa*lim?`<span class="lim-t warn">Almost: ${rs(lim-v).replace("Rs ","")} left</span>`:`<span>${rs(lim-v).replace("Rs ","")} left</span>`):`<span>${Math.round(w)}% of spending</span>`;
+    return `<button class="catrow" data-opencat="${esc(c)}" aria-expanded="${open}"><span style="font-weight:500">${esc(c)}</span><span class="num" style="font-weight:600">${rs(v).replace("Rs ","")}</span><span class="bar"><i class="lim-${st}" style="width:${Math.max(lw,1.5)}%"></i></span><span class="limrow"><span>${lim?"Limit "+rs(lim).replace("Rs ",""):"No limit"}</span>${right}</span></button>
+    ${open?`<div class="catlist"><div class="row" style="margin-bottom:4px"><p class="small muted">${items.length} entr${items.length===1?"y":"ies"} in ${esc(c)}</p><button class="linkbtn" data-setlimit="${esc(c)}">${lim?"Change limit":"Set a monthly limit"}</button></div><div class="list">${items.map(entryRow).join("")}</div></div>`:""}`;}).join(""):`<p class="empty">No spending in ${monthName(k)}.</p>`}</section>
   ${S.bills.length?`<div class="secthead"><h2>Bills</h2><span class="small muted">Still to pay <b class="num c-out">${rs(still)}</b>${stillVar?" + bills that change":""}</span></div>
   <section class="card" style="padding-block:4px"><div class="list">${bills.map(([x,s])=>`<div class="item" style="cursor:default"><span class="txt"><span class="t1">${esc(x.name)}</span><span class="t2">${billAmt(x)?rs(x.amount):"Amount changes every month"}${s.paid&&!billAmt(x)?" · paid "+rs(s.paid):""}${x.day?" · due day "+esc(x.day):""}</span></span><span style="display:flex;gap:6px;align-items:center"><span class="pill ${s.state==="paid"?"p-ok":s.state==="late"?"p-late":"p-due"}">${esc(s.label)}</span>${s.state!=="paid"?`<button class="paybtn" data-pay="${S.bills.indexOf(x)}">Mark paid</button>`:""}</span></div>`).join("")}</div></section>
   <p class="note">A bill counts as paid when you tap Mark paid, or when you add a Spent entry and pick the bill under “Which bill is this?”. The app also spots it by itself when the note has the bill's name (like “electricity”), or when it's the only bill in that category and the amount is close (like Rent).</p>`:""}
@@ -935,16 +971,69 @@ function openSearch(){ sheet=null; voice=null; const host=document.getElementByI
     <div class="row"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Name, amount, category or month" autocomplete="off" value="${esc(searchQ)}" aria-label="Search all entries"></div><button class="linkbtn" id="srClose">Cancel</button></div>
     <div id="qres">${searchQ.trim()?searchHTML(searchQ.trim()):`<p class="note" style="margin:8px 4px">Search every entry from every month. Try "food november", "hbo" or "1340".</p>`}</div></div></div>`;
   setTimeout(()=>{ const i=document.getElementById("q"); if(i) i.focus(); },80); }
+let limitSheet=null;
+function openLimitSheet(c){
+  const lim=+(S.limits||{})[c]||0, wa=+((S.warnAt||{})[c]||80);
+  const k=ym(todayStr()), past=[1,2,3].map(i=>addMonths(k,-i)).map(m=>inMonth(m).filter(e=>e.type==="Spent"&&!e.pass&&hasCat(e,c)).reduce((s,e)=>s+(+e.amount||0),0)).filter(x=>x>0);
+  const avg=past.length?past.reduce((a,b)=>a+b,0)/past.length:0;
+  limitSheet={c,wa};
+  document.getElementById("sheetHost").innerHTML=`<div class="sheet" id="lsBg"><div class="panel" role="dialog" aria-modal="true" aria-label="${esc(c)} limit">
+    <div class="row"><h2>${esc(c)} limit</h2><button class="linkbtn" id="lsClose">Close</button></div>
+    <div class="field"><label for="lsAmt">Monthly limit (Rs)</label><input id="lsAmt" class="amount num" inputmode="decimal" placeholder="15000" value="${lim?esc(String(lim)):""}"></div>
+    <div class="field"><span class="flab">Warn me at</span><div class="chips">${[70,80,90].map(p=>`<button type="button" class="chip" data-warn="${p}" aria-pressed="${p===wa}">${p}%</button>`).join("")}</div></div>
+    ${avg?`<p class="note">In the last ${past.length} month${past.length===1?"":"s"} you spent about ${rs(avg)} a month on ${esc(c)}.</p>`:""}
+    <p class="err" id="lsErr"></p>
+    <button class="primary" id="lsSave">Save limit</button>
+    ${lim?`<button class="ghost danger" id="lsDel">Remove limit</button>`:""}
+  </div></div>`;
+  setTimeout(()=>{ const i=document.getElementById("lsAmt"); if(i&&!i.value) i.focus(); },60);
+}
+async function saveLimit(remove){
+  const c=limitSheet.c, N=clone(S); N.limits=N.limits||{}; N.warnAt=N.warnAt||{};
+  if(remove){ delete N.limits[c]; delete N.warnAt[c]; }
+  else { const a=parseAmount((document.getElementById("lsAmt")||{}).value||""); if(!isFinite(a)||a<=0){ document.getElementById("lsErr").textContent="Type the monthly limit, like 15000"; return; } N.limits[c]=a; N.warnAt[c]=limitSheet.wa; }
+  try{ await profileRef.set(N); S=N; document.getElementById("sheetHost").innerHTML=""; limitSheet=null; render(); toast(remove?"Limit removed":"Limit saved: "+rs(N.limits[c])+" a month"); }catch(x){ document.getElementById("lsErr").textContent=writeError(x); }
+}
+function openGoalSheet(id){
+  const isNew=!id, G=isNew?{name:"",price:"",target:""}:goalById(id), f=isNew?0:goalFund(id);
+  const host=document.getElementById("sheetHost"); sheet=null;
+  host.innerHTML=`<div class="sheet" id="gsBg"><div class="panel" role="dialog" aria-modal="true" aria-label="${isNew?"New goal":"Edit goal"}">
+    <div class="row"><h2>${isNew?"New goal":"Edit goal"}</h2><button class="linkbtn" id="gsClose">Close</button></div>
+    <div class="field"><label for="gn">Name</label><input id="gn" autocomplete="off" placeholder="Umrah, Emergency fund…" value="${esc(G.name||"")}"></div>
+    <div class="field"><label for="gp">Target amount (Rs)</label><input id="gp" class="amount num" inputmode="decimal" placeholder="4,00,000" value="${esc(G.price?String(G.price):"")}"></div>
+    <div class="field"><label for="gt">Reach it by (optional)</label><input id="gt" type="date" value="${esc(G.target||"")}"></div>
+    <p class="note">Kept in ${esc(S.goal.account)}, like your other goals.</p>
+    <p class="err" id="gErr"></p>
+    <button class="primary" id="gsSave" data-gid="${esc(id||"")}">${isNew?"Add goal":"Save changes"}</button>
+    ${!isNew && id!=="car"?`<button class="ghost danger" id="gsDel" data-gid="${esc(id)}">${f>0.5?"Delete goal (move its "+rs(f)+" out first)":"Delete goal"}</button>`:""}
+  </div></div>`;
+}
+async function saveGoalSheet(id){
+  const v=x=>(document.getElementById(x)||{}).value||"", err=document.getElementById("gErr");
+  const name=v("gn").trim(), price=parseAmount(v("gp")||"0"), target=v("gt");
+  if(!name){ err.textContent="Give the goal a name"; return; }
+  if(!isFinite(price)||price<0){ err.textContent="Type the target amount, like 400000"; return; }
+  const N=clone(S); N.goals=N.goals||[];
+  if(id==="car"){ N.goal=Object.assign(N.goal,{name,price,target}); }
+  else if(id){ const g=N.goals.find(x=>x.id===id); if(g) Object.assign(g,{name,price,target}); }
+  else N.goals.push({id:"g"+Date.now().toString(36), name, price, target, created:todayStr()});
+  try{ await profileRef.set(N); S=N; document.getElementById("sheetHost").innerHTML=""; render(); toast(id?"Goal saved":"Goal added: "+name); }catch(x){ err.textContent=writeError(x); }
+}
+async function deleteGoal(id){
+  if(goalFund(id)>0.5){ document.getElementById("gErr").textContent="This goal still has money. Add a minus amount to it first, or move it to another goal."; return; }
+  const N=clone(S); N.goals=(N.goals||[]).filter(g=>g.id!==id);
+  try{ await profileRef.set(N); S=N; carGoal="car"; document.getElementById("sheetHost").innerHTML=""; tab="home"; render(); toast("Goal deleted"); }catch(x){ document.getElementById("gErr").textContent=writeError(x); }
+}
 function searchHTML(q){
   const toks=q.toLowerCase().split(/\s+/).filter(Boolean);
-  const hay=e=>[e.note,e.who,e.src,e.bill&&e.bill!=="-"?e.bill:"",e.type==="Car"?(S.goal.name||"goal"):e.type,e.pass?"not my money":"",...(e.type==="Spent"?ecats(e):[]),wallet(e.from||""),wallet(e.to||""),
+  const hay=e=>[e.note,e.who,e.src,e.bill&&e.bill!=="-"?e.bill:"",e.type==="Car"?goalWord(e):e.type,e.pass?"not my money":"",...(e.type==="Spent"?ecats(e):[]),wallet(e.from||""),wallet(e.to||""),
     String(Math.abs(+e.amount||0)),rs(Math.abs(+e.amount||0)),shortDate(e.date),monthName(ym(e.date))].join(" ").toLowerCase();
   const res=sorted(E.filter(e=>{ const h=hay(e); return toks.every(t=>h.includes(t)); }));
   if(!res.length) return `<p class="empty">Nothing found for “${esc(q)}”.</p>`;
   const out=sumType(res,"Spent"), inn=sumType(res,"Received");
   return `<p class="note" style="margin:2px 2px 8px">${res.length} entr${res.length===1?"y":"ies"}${out?" · out "+rs(out):""}${inn?" · in "+rs(inn):""}</p><section class="card group"><div class="list">${res.slice(0,150).map(entryRow).join("")}</div></section>${res.length>150?`<p class="note">Showing the latest 150. Add more words to narrow it down.</p>`:""}`;
 }
-let openPerson="";
+let openPerson="", goalsOpen=false, carGoal="car";
 function viewPeople(){
   const all=people(), key=x=>x.name.trim().toLowerCase();
   const owe=all.filter(x=>x.net<=-0.5), owed=all.filter(x=>x.net>=0.5), done=all.filter(x=>Math.abs(x.net)<0.5);
@@ -963,29 +1052,30 @@ function viewPeople(){
     :`<p class="empty">No one owes you, and you owe no one. Tap + when you lend or borrow money.</p>`}`;
 }
 function viewCar(){
-  const cf=carFund(), price=+S.goal.price||0, need=Math.max(0,price-cf), pct=price?Math.min(100,cf/price*100):0;
+  const G=goalById(carGoal), gid=G.id, cf=goalFund(gid), price=+G.price||0, need=Math.max(0,price-cf), pct=price?Math.min(100,cf/price*100):0;
   const today=todayStr(), y=+today.slice(0,4);
-  const rows=[1,2,3].map(n=>{ const end=(y+n)+"-12-31"; const m=Math.max(1,monthsBetween(today,end)); const days=Math.max(1,Math.round((new Date(end)-new Date(today))/864e5));
+  const rows=[1,2,3].map(n=>{ const end=(y+n)+"-12-31"; const m=Math.max(1,monthsBetween(today,end));
     return `<span>End of ${y+n}</span><span class="num muted">${m} mo</span><span class="num" style="font-weight:700">${rs(need/m)}<span class="muted small">/mo</span></span>`; }).join("");
-  const savedLog=E.filter(e=>e.type==="Car" && !e.before).reduce((s,e)=>s+(+e.amount||0),0);
-  const days=Math.max(1,(new Date(today)-new Date(S.startDate||today))/864e5), pace=savedLog/Math.max(1,days/30.44);
-  const ready=pace>0?(()=>{const n=Math.ceil(need/pace); const d=new Date(); d.setMonth(d.getMonth()+n); return MON[d.getMonth()].slice(0,3)+" "+d.getFullYear();})():"–";
+  const savedLog=E.filter(e=>e.type==="Car" && !e.before && (e.goal||"car")===gid).reduce((s,e)=>s+(+e.amount||0),0);
+  const first=E.filter(e=>e.type==="Car" && (e.goal||"car")===gid && !e.before).map(e=>e.date).sort()[0];
+  const since=gid==="car"?(S.startDate||today):(G.created||first||today);
+  const days=Math.max(1,(new Date(today)-new Date(since))/864e5), pace=savedLog/Math.max(1,days/30.44);
+  const ready=pace>0&&need>0?(()=>{const n=Math.ceil(need/pace); const d=new Date(); d.setMonth(d.getMonth()+n); return MON[d.getMonth()].slice(0,3)+" "+d.getFullYear();})():need<=0?"reached":"–";
   let tgt="";
-  if(S.goal.target){ const m=monthsBetween(today,S.goal.target); tgt = m>0?`<div class="row"><span>To reach it by ${shortDate(S.goal.target)} ${S.goal.target.slice(0,4)}</span><b class="num">${rs(need/m)}/mo</b></div>`:`<p class="note">Your target date has passed. Set a new one in Settings.</p>`; }
+  if(G.target){ const m=monthsBetween(today,G.target); tgt = m>0?`<div class="row"><span>To reach it by ${shortDate(G.target)} ${G.target.slice(0,4)}</span><b class="num">${rs(need/m)}/mo</b></div>`:`<p class="note">Your target date has passed. Tap Edit goal to set a new one.</p>`; }
   return `
-  <button class="linkbtn backbtn" data-tab="home">‹ Home</button>
-  <section class="card hero carhero"><p class="lab">${esc(S.goal.name||"Goal")} fund · kept in ${esc(S.goal.account)}</p>
+  <div class="row"><button class="linkbtn backbtn" data-tab="home">‹ Home</button><button class="linkbtn" data-editgoal="${esc(gid)}">Edit goal</button></div>
+  <section class="card hero carhero"><p class="lab">${esc(G.name||"Goal")} · kept in ${esc(S.goal.account)}</p>
     <p class="big num" style="color:var(--car)">${rs(cf)}</p>
     <p class="grownote" style="margin-top:4px">${esc(growNote(pct))}</p>
-    <div class="row small" style="margin-top:44px;position:relative;z-index:1;max-width:60%;flex-direction:column;align-items:flex-start;gap:2px"><span class="muted">${pct.toFixed(1)}% of ${rs(price)}</span><span>Still needed <b class="num">${rs(need)}</b></span></div>
+    <div class="row small" style="margin-top:44px;position:relative;z-index:1;max-width:60%;flex-direction:column;align-items:flex-start;gap:2px"><span class="muted">${price?pct.toFixed(1)+"% of "+rs(price):"No target set"}</span><span>Still needed <b class="num">${rs(need)}</b></span></div>
     ${treeSVG(pct)}
   </section>
-  <button class="act" data-add="Car" style="justify-content:center;flex-direction:row;font-size:15px;padding:12px"><span class="dot d-car" aria-hidden="true">★</span>Add to the ${esc((S.goal.name||"goal").toLowerCase())} fund</button>
-  <h2>When can I buy it?</h2>
+  <button class="act" data-addgoal="${esc(gid)}" style="justify-content:center;flex-direction:row;font-size:15px;padding:12px"><span class="dot d-car" aria-hidden="true">★</span>Add to ${esc(G.name||"goal")}</button>
+  ${price?`<h2>When can I reach it?</h2>
   <section class="card"><div class="plan"><span class="h">If I want it by</span><span class="h">Time</span><span class="h">Save</span>${rows}</div>
   ${tgt?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">${tgt}</div>`:""}</section>
-  <section class="card"><div class="row"><span>At my saving speed so far<br><span class="small muted">${rs(pace)} a month since ${esc(shortDate(S.startDate||today))}</span></span><b class="num">${pace>0?"ready by "+ready:"Save something first"}</b></div></section>
-  <p class="note">The years move forward by themselves. The amounts go down every time you save.</p>`;
+  <section class="card"><div class="row"><span>At my saving speed so far<br><span class="small muted">${rs(pace)} a month</span></span><b class="num">${pace>0?(need>0?"ready by "+ready:"reached"):"Save something first"}</b></div></section>`:`<p class="note">Set a target amount with Edit goal to see a saving plan.</p>`}`;
 }
 function viewSettings(){
   const s=S;
@@ -1051,6 +1141,8 @@ function viewSettings(){
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
     <li><b>Bills:</b> tap Mark paid, or pick the bill when you add a Spent. You can change the amount before saving, so bills that change each month still work.</li>
     <li><b>Bank fees:</b> when you add a Subscription or an Online & card payment, the app fills in the bank fee (1% + Rs 100 + Rs 16 tax) and saves it as its own Bank fees entry. Change it or clear it if it was different.</li>
+    <li><b>Goals:</b> tap the Goals card on Home to see all your goals, open one to see its plan, or add a new goal. When you add money, pick which goal it's for.</li>
+    <li><b>Spending limits:</b> on Month, tap a category under "Where it went", then <b>Set a monthly limit</b>. The bar turns amber when you're close and red when you go over. It starts fresh every month.</li>
     <li><b>Not my money:</b> when money only passes through you (someone sends it and you forward it), tap <b>Not my money</b> on Spent or Received. Your balance stays right, but it isn't counted as your income or spending.</li>
     <li><b>Search:</b> on Month, type a name, amount, category or month in the search box to find any entry from any month.</li>
     <li><b>Chart:</b> Month shows your money out for the last 6 months. Tap a month to open it.</li>
@@ -1152,7 +1244,7 @@ function catSel(id,v){ return `<select id="${id}"><option value="">Any</option>$
 
 /* ---------- add / edit sheet ---------- */
 function openSheet(kind, entry){
-  const e = entry ? clone(entry) : {type:kind, date:todayStr(), amount:"", cat:"", from:"", to:"", note:""};
+  const e = entry ? clone(entry) : {type:kind, date:todayStr(), amount:"", cat:"", from:"", to:"", note:"", goal:kind==="Car"?"car":""};
   if(e.type==="Lent"||e.type==="Borrowed"){ const a=+e.amount||0; e.act=e.type==="Lent"?(a>0?"lend":"theyPaid"):(a>0?"borrow":"iPaid"); e.amount=String(Math.abs(a)); e.type="People"; }
   if(e.type==="People" && !e.act) e.act="lend";
   if(e.type==="Spent") e.cats=ecats(e).filter(Boolean); if(e.type==="Spent" && !entry) e.cats=[];
@@ -1170,14 +1262,15 @@ function drawSheet(){
   const curTo=t==="Car"?(e.to||S.goal.account):e.to;
   host.innerHTML=`<div class="sheet" id="sheetBg"><div class="panel" role="dialog" aria-modal="true" aria-label="${sheet.editing?"Change entry":"Add entry"}">
     <div class="row"><h2>${sheet.editing?"Change entry":"Add"}</h2><button class="linkbtn" id="closeSheet">Close</button></div>
-    <div class="seg" role="group" aria-label="What happened">${["Spent","Received","Moved","Car","People"].map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===t}">${k==="Car"?esc(S.goal.name||"Goal"):k}</button>`).join("")}</div>
+    <div class="seg" role="group" aria-label="What happened">${["Spent","Received","Moved","Car","People"].map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===t}">${k==="Car"?(goalList().length>1?"Goal":esc(S.goal.name||"Goal")):k}</button>`).join("")}</div>
     ${t==="People"?`<div class="field"><span class="flab">What happened</span><div class="chips">${Object.entries(ACTS).map(([k,v])=>`<button type="button" class="chip" data-act="${k}" aria-pressed="${e.act===k}">${v[0]}</button>`).join("")}</div></div>
     <div class="field"><label for="who">Who</label><input id="who" autocomplete="off" placeholder="Name, like Ali" value="${esc(e.who||"")}">${people().length?`<div class="chips" style="margin-top:6px">${people().map(x=>`<button type="button" class="chip" data-who="${esc(x.name)}" aria-pressed="${(e.who||"").toLowerCase()===x.name.toLowerCase()}">${esc(x.name)}</button>`).join("")}</div>`:""}</div>`:""}
     <div class="field"><label for="amt">Amount (Rs)</label><input id="amt" class="amount num" inputmode="decimal" autocomplete="off" placeholder="500" value="${esc(e.amount)}"><p class="err" id="amtErr"></p></div>
     ${t==="Spent"?`<div class="field"><span class="flab">Category <span class="muted" style="font-weight:400">(tap more than one if it fits more)</span></span><div class="chips" id="catChips">${catOrder().map(c=>`<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="${(e.cats||[]).includes(c)}">${esc(c)}</button>`).join("")}</div></div>`:""}
     ${t==="Spent" && (e.cats||[]).length && billsForCat(e.cats).length?`<div class="field"><span class="flab">Which bill is this? (optional)</span><div class="chips">${billsForCat(e.cats).map(b=>`<button type="button" class="chip" data-bill="${esc(b.name)}" aria-pressed="${e.bill===b.name}">${esc(b.name)}</button>`).join("")}<button type="button" class="chip" data-bill="-" aria-pressed="${e.bill==="-"}">Not a bill</button></div></div>`:""}
     <div class="field"><span class="flab">${fromLabel}</span><div class="chips">${names.filter(n=>t==="Car"?n!==S.goal.account:true).map(n=>`<button type="button" class="chip" data-from="${esc(n)}" aria-pressed="${n===curFrom}">${esc(wallet(n))}</button>`).join("")}</div></div>
-    ${t==="Moved"||t==="Car"?`<div class="field"><span class="flab">To</span><div class="chips">${names.map(n=>`<button type="button" class="chip" data-to="${esc(n)}" aria-pressed="${n===curTo}">${esc(wallet(n))}</button>`).join("")}</div></div>`:""}
+    ${t==="Car" && goalList().length>1?`<div class="field"><span class="flab">Which goal</span><div class="chips">${goalList().map(g=>`<button type="button" class="chip" data-gpick="${esc(g.id)}" aria-pressed="${(e.goal||"car")===g.id}">${esc(g.name||"Goal")}</button>`).join("")}</div></div>`:""}
+    ${t==="Moved"?`<div class="field"><span class="flab">To</span><div class="chips">${names.map(n=>`<button type="button" class="chip" data-to="${esc(n)}" aria-pressed="${n===curTo}">${esc(wallet(n))}</button>`).join("")}</div></div>`:""}
     ${t==="Received"?`<div class="field"><span class="flab">Where it came from</span><div class="chips">${SRCS.map(x=>`<button type="button" class="chip" data-src="${x}" aria-pressed="${e.src===x}">${x}</button>`).join("")}</div></div>`:""}
     <div class="field"><label for="note">${t==="Received"?(e.src==="Project"?"Which project / client":e.src==="Family"?"Who in the family":e.src==="Person"?"Who":"From who / what"):"Note (optional)"}</label><input id="note" autocomplete="off" placeholder="${t==="Received"?"Mark, logo project":t==="Spent"?"electricity":t==="People"?"what it was for":"atm"}" value="${esc(e.note)}">${t==="Received" && recentSources().length?`<div class="chips" style="margin-top:6px">${recentSources().map(x=>`<button type="button" class="chip" data-rname="${esc(x.name)}" data-rsrc="${esc(x.src)}" aria-pressed="${String(e.note||"").toLowerCase()===x.name.toLowerCase()}">${esc(x.name)}</button>`).join("")}</div>`:""}</div>
     ${t==="Spent" && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee?`<div class="field"><label for="fee">Bank fee (saved as its own entry)</label><input id="fee" class="num" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(e.feeTxt!=null?e.feeTxt:(cardFee(parseAmount(e.amount))||""))}"><p class="small muted" style="margin-top:4px">Worked out as 1% + Rs 100 + Rs 16 tax. If your bank charged something else, change it. Clear it if there was no fee.</p></div>`:""}
@@ -1210,13 +1303,13 @@ async function saveSheet(){
   if((t==="Moved"||(t==="Car" && amt>0)) && from===to){ err.textContent="From and To can't be the same account"; return; }
   let fee=0; if(t==="Spent" && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee && String(e.feeNow||"").trim()){ fee=parseAmount(e.feeNow); if(!isFinite(fee)||fee<0){ err.textContent="Type the bank fee, like 127, or clear it"; return; } }
   const cl=t==="Spent"?((e.cats||[]).length?e.cats.slice():["Other"]):[];
-  const doc={type:t, amount:amt, date:e.date||todayStr(), pass:(t==="Spent"||t==="Received")&&!!e.pass, cat:t==="Spent"?cl[0]:"", cats:t==="Spent"&&cl.length>1?cl:[], bill:t==="Spent"?(e.bill||""):"", src:t==="Received"?(e.src||""):"", from, to:to||"", note:String(e.note||"").trim(),
+  const doc={type:t, amount:amt, date:e.date||todayStr(), goal:t==="Car"?(e.goal||"car"):"", pass:(t==="Spent"||t==="Received")&&!!e.pass, cat:t==="Spent"?cl[0]:"", cats:t==="Spent"&&cl.length>1?cl:[], bill:t==="Spent"?(e.bill||""):"", src:t==="Received"?(e.src||""):"", from, to:to||"", note:String(e.note||"").trim(),
     before: !!(sheet.editing && e.before), created: sheet.editing ? (e.created||Date.now()) : Date.now()};
   const btn=document.getElementById("saveBtn"); btn.disabled=true; btn.textContent="Saving…";
   try{
     if(sheet.editing) await entriesCol.doc(sheet.id).set(doc); else await entriesCol.doc().set(doc);
     if(fee>0) await entriesCol.doc().set({type:"Spent", amount:Math.round(fee*100)/100, date:doc.date, cat:bankFeesCat(), bill:"-", src:"", from, to:"", note:"Fee for "+(doc.bill&&doc.bill!=="-"?doc.bill:(doc.note||cl.join(" + "))), before:false, created:doc.created+1});
-    const msg=(sheet.editing?"Changed: ":"Saved: ")+(t==="Car"?"saved for "+(S.goal.name||"goal").toLowerCase():t.toLowerCase())+" "+rs(amt)+(fee>0?" + fee "+rs(fee):"");
+    const msg=(sheet.editing?"Changed: ":"Saved: ")+(t==="Car"?"saved for "+goalWord({goal:e.goal}).toLowerCase():t.toLowerCase())+" "+rs(amt)+(fee>0?" + fee "+rs(fee):"");
     const back=sheet.back; sheet=null; drawSheet(); toast(msg); if(back && back.items.length){ voice=back; drawVoice(); }
   }catch(x){ btn.disabled=false; btn.textContent="Save"; err.textContent=writeError(x); }
 }
@@ -1270,7 +1363,7 @@ async function downloadExcel(){
     catch(x){ toast("Excel tool didn't load. Check your internet."); return; } }
   if(!downloads){ toast("Downloads aren't available here."); return; }
   const wb=XLSX.utils.book_new();
-  const rows=sorted(E).reverse().map(e=>({Date:e.date, "What happened":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():e.type==="Lent"?(e.amount>0?"Lent":"Paid back to me"):e.type==="Borrowed"?(e.amount>0?"Borrowed":"I paid back"):e.type, Amount:Math.abs(+e.amount), Person:e.who||"", "Came from":e.src||"", "Not my money":e.pass?"Yes":"", Category:e.type==="Spent"?ecats(e).join(" + "):"", From:e.from||"", To:e.to||"", Note:e.note||"", Bill:e.bill&&e.bill!=="-"?e.bill:"", "Before tracking":e.before?"Yes":""}));
+  const rows=sorted(E).reverse().map(e=>({Date:e.date, "What happened":e.type==="Car"?"Saved for "+goalWord(e).toLowerCase():e.type==="Lent"?(e.amount>0?"Lent":"Paid back to me"):e.type==="Borrowed"?(e.amount>0?"Borrowed":"I paid back"):e.type, Amount:Math.abs(+e.amount), Person:e.who||"", "Came from":e.src||"", "Not my money":e.pass?"Yes":"", Category:e.type==="Spent"?ecats(e).join(" + "):"", From:e.from||"", To:e.to||"", Note:e.note||"", Bill:e.bill&&e.bill!=="-"?e.bill:"", "Before tracking":e.before?"Yes":""}));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Entries");
   const months=[...new Set(E.map(e=>ym(e.date)))].sort().map(k=>{ const m=inMonth(k); const i=sumType(m,"Received"), o=sumType(m,"Spent"), s=sumType(m,"Car"); return {Month:monthName(k), "Money in":i, "Money out":o, "Saved for goal":s, "In - out - saved":i-o-s}; });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(months), "Months");
@@ -1288,8 +1381,24 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("[data-goal],#goalsDone,#newGoal,[data-editgoal],[data-addgoal],[data-gpick],#gsClose,#gsBg,#gsSave,#gsDel,[data-setlimit],#lsClose,#lsBg,#lsSave,#lsDel,[data-warn],#searchBtn,#srClose,#srBg,[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
+  if(t.dataset.goal){ carGoal=t.dataset.goal; goalsOpen=false; tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); return; }
+  if(t.id==="goalsDone"){ goalsOpen=false; render(); return; }
+  if(t.id==="newGoal"){ openGoalSheet(""); return; }
+  if(t.dataset.editgoal){ openGoalSheet(t.dataset.editgoal); return; }
+  if(t.dataset.addgoal){ openSheet("Car"); sheet.e.goal=t.dataset.addgoal; drawSheet(); return; }
+  if(t.dataset.gpick){ readSheetInputs(); sheet.e.goal=t.dataset.gpick; drawSheet(); return; }
+  if(t.id==="gsClose"){ document.getElementById("sheetHost").innerHTML=""; return; }
+  if(t.id==="gsBg"){ if(ev.target===t) document.getElementById("sheetHost").innerHTML=""; return; }
+  if(t.id==="gsSave"){ saveGoalSheet(t.dataset.gid); return; }
+  if(t.id==="gsDel"){ deleteGoal(t.dataset.gid); return; }
+  if(t.dataset.setlimit){ openLimitSheet(t.dataset.setlimit); return; }
+  if(t.id==="lsClose"){ document.getElementById("sheetHost").innerHTML=""; limitSheet=null; return; }
+  if(t.id==="lsBg"){ if(ev.target===t){ document.getElementById("sheetHost").innerHTML=""; limitSheet=null; } return; }
+  if(t.dataset.warn){ if(limitSheet){ limitSheet.wa=+t.dataset.warn; document.querySelectorAll("[data-warn]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.warn===limitSheet.wa))); } return; }
+  if(t.id==="lsSave"){ saveLimit(false); return; }
+  if(t.id==="lsDel"){ saveLimit(true); return; }
   if(t.id==="searchBtn"){ openSearch(); return; }
   if(t.id==="srClose"){ document.getElementById("sheetHost").innerHTML=""; return; }
   if(t.id==="srBg"){ if(ev.target===t) document.getElementById("sheetHost").innerHTML=""; return; }
@@ -1298,7 +1407,7 @@ document.addEventListener("click", ev=>{
   if(t.dataset.pass){ readSheetInputs(); sheet.e.pass=!sheet.e.pass; drawSheet(); return; }
   if(t.id==="eyeBtn"){ showAmt=!showAmt; render(); return; }
   if(t.dataset.card!==undefined){ const c=t.dataset.card; const btns=[...document.querySelectorAll(".wc")]; const isFront=btns.length && btns[btns.length-1]===t;
-    if(isFront){ if(c==="__goal"){ tab="car"; try{localStorage.setItem("mm.tab",tab);}catch(e){} window.scrollTo(0,0); render(); } return; }
+    if(isFront){ if(c==="__goal"){ goalsOpen=true; render(); } return; }
     frontCard=c; try{localStorage.setItem("mm.card",c);}catch(e){} render(); return; }
   if(t.id==="faceBtn"){ faceUnlock(); return; }
   if(t.id==="faceOn"){ faceSetup(); return; }
