@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.7.1 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.8 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -353,9 +353,11 @@ const MULT={hundred:100,sau:100,"सौ":100,"سو":100,thousand:1000,hazar:1000
 const FRAC={derh:1.5,dedh:1.5,"डेढ़":1.5,"डेढ":1.5,"ڈیڑھ":1.5,dhai:2.5,dhaai:2.5,"ढाई":2.5,"ڈھائی":2.5};
 const PRE={sade:.5,saade:.5,sarhe:.5,"साढ़े":.5,"साढे":.5,"ساڑھے":.5,sawa:.25,"सवा":.25,"سوا":.25,paune:-.25,"पौने":-.25,"پونے":-.25};
 const SEPW=new Set(["|","and","aur","और","اور","then","phir","fir","फिर","پھر"]);
-const FILL=new Set(["se","से","سے","mein","main","में","میں","me","ka","ki","ke","का","की","के","کا","کی","کے","ko","को","کو","rs","rupees","rupay","rupaye","रुपये","रुपए","रूपए","روپے","روپیہ","pkr","the","for","on","of","from","to","in","a","ne","ने","نے","hai","है","ہے","tha","था","تھا"]);
-const TYPEW={Moved:["atm","एटीएम","اے ٹی ایم","nikale","nikaale","nikala","निकाले","निकाला","نکالے","نکالا","withdraw","transfer","ट्रांसफर","ٹرانسفر","moved"],
- Spent:["kharcha","kharch","ख़र्चा","खर्चा","खर्च","خرچہ","خرچ","spent","diye","diya","दिए","दिया","دیے","دیا","liya","liye","लिया","लिए","لیا","لیے","paid","pay"],
+const FILL=new Set(["i","my","on","at","for","the","with","by","was","were","is","it","this","that","some","money","rupee","rupees","rs","pkr","from","into","in","to","se","से","سے","mein","main","में","میں","me","ka","ki","ke","का","की","के","کا","کی","کے","ko","को","کو","rs","rupees","rupay","rupaye","रुपये","रुपए","रूपए","روپے","روپیہ","pkr","the","for","on","of","from","to","in","a","ne","ने","نے","hai","है","ہے","tha","था","تھا"]);
+const TYPEW={Car:["saved for","save for","saving for","savings","car fund","for the car","for car"],
+ Recv:["received","receive","salary","income","refund","refunded","got paid","earned","credited","تنخواہ","तनख्वाह","सैलरी","سیلری"],
+ Moved:["withdrew","withdrawal","took out","transferred","atm","एटीएम","اے ٹی ایم","nikale","nikaale","nikala","निकाले","निकाला","نکالے","نکالا","withdraw","transfer","ट्रांसफर","ٹرانسفر","moved"],
+ Spent:["spent","paid","pay","bought","buy","purchased","gave","debited","kharcha","kharch","ख़र्चा","खर्चा","खर्च","خرچہ","خرچ","spent","diye","diya","दिए","दिया","دیے","دیا","liya","liye","लिया","लिए","لیا","لیے","paid","pay"],
  Received:["received","mila","mile","mili","मिला","मिले","मिली","ملا","ملے","ملی","aaye","aaya","आए","आया","आये","آئے","آیا","salary","सैलरी","سیلری","tankhwah","तनख्वाह","تنخواہ","income","got"]};
 const ACCW={bank:["bank","बैंक","بینک","card","कार्ड","کارڈ"],cash:["cash","कैश","کیش","wallet","वॉलेट","والٹ","jeb","जेब","جیب","naqad","नकद","نقد"],
  nayapay:["nayapay","naya pay","नयापे","नया पे","नयापै","نیا پے","نیاپے","نیا پے"],jazzcash:["jazzcash","jazz cash","जैज़कैश","जैज कैश","جاز کیش","جازکیش"],
@@ -363,31 +365,80 @@ const ACCW={bank:["bank","बैंक","بینک","card","कार्ड","ک�
 function accSyn(n){ const k=n.toLowerCase().replace(/\s+/g,""); return (ACCW[k]||[]).concat([n.toLowerCase()]); }
 const CATW=[["Rent",["rent","रेंट","رینٹ","kiraya","किराया","کرایہ"]],
  ["Subscriptions",["subscription","netflix","youtube","यूट्यूब","icloud","hbo","spotify","canva","prime","chatgpt"]],
- ["Mobile & phone",["mobile","मोबाइल","موبائل","phone","फ़ोन","फोन","فون","load","लोड","لوڈ","package","पैकेज","پیکج"]],
+ ["Mobile & phone",["top up","topup","recharge","mobile","मोबाइल","موبائل","phone","फ़ोन","फोन","فون","load","लोड","لوڈ","package","पैकेज","پیکج"]],
  ["Bills",["bill","बिल","بل","bijli","बिजली","بجلی","electric","gas","गैस","گیس","internet","इंटरनेट","انٹرنیٹ","wifi"]],
- ["Fuel & Transport",["petrol","पेट्रोल","پیٹرول","پٹرول","fuel","careem","करीम","کریم","uber","उबर","اوبر","indrive","yango","bykea","rickshaw","रिक्शा","رکشہ","taxi","टैक्सी","ٹیکسی","parking","पार्किंग","پارکنگ","toll"]],
- ["Eating Out",["restaurant","रेस्टोरेंट","ریسٹورنٹ","hotel","chai","चाय","چائے","burger","बर्गर","برگر","pizza","पिज़्ज़ा","पिज्जा","پیزا","foodpanda","फूडपांडा","dinner","डिनर","lunch","लंच","coffee","कॉफी","कॉफ़ी"]],
- ["Food",["food","grocer","khana","khaana","खाना","کھانا","sabzi","सब्ज़ी","सब्जी","سبزی","doodh","दूध","دودھ","atta","आटा","آٹا","fruit","फल","پھل","ration","राशन","راشن","anday","अंडे","انڈے"]],
- ["Health",["doctor","डॉक्टर","ڈاکٹر","dawai","dawa","दवाई","दवा","دوائی","دوا","medicine","hospital","अस्पताल","ہسپتال","pharmacy","फार्मेसी"]],
+ ["Fuel & Transport",["bus","train","ticket","metro","petrol","पेट्रोल","پیٹرول","پٹرول","fuel","careem","करीम","کریم","uber","उबर","اوبر","indrive","yango","bykea","rickshaw","रिक्शा","رکشہ","taxi","टैक्सी","ٹیکسی","parking","पार्किंग","پارکنگ","toll"]],
+ ["Eating Out",["tea","snack","snacks","breakfast","takeaway","cafe","restaurant","रेस्टोरेंट","ریسٹورنٹ","hotel","chai","चाय","چائے","burger","बर्गर","برگر","pizza","पिज़्ज़ा","पिज्जा","پیزا","foodpanda","फूडपांडा","dinner","डिनर","lunch","लंच","coffee","कॉफी","कॉफ़ी"]],
+ ["Food",["milk","vegetable","vegetables","veggies","bread","egg","eggs","meat","chicken","rice","flour","fruits","food","grocer","khana","khaana","खाना","کھانا","sabzi","सब्ज़ी","सब्जी","سبزی","doodh","दूध","دودھ","atta","आटा","آٹا","fruit","फल","پھل","ration","राशन","راشن","anday","अंडे","انڈے"]],
+ ["Health",["medicines","clinic","dentist","test","tests","doctor","डॉक्टर","ڈاکٹر","dawai","dawa","दवाई","दवा","دوائی","دوا","medicine","hospital","अस्पताल","ہسپتال","pharmacy","फार्मेसी"]],
  ["Gym",["gym","जिम","جم"]],
- ["Shopping",["shopping","शॉपिंग","شاپنگ","kapde","कपड़े","कपडे","کپڑے","clothes","shoes","joote","जूते","جوتے","daraz"]],
+ ["Shopping",["amazon","shirt","jeans","shopping","शॉपिंग","شاپنگ","kapde","कपड़े","कपडे","کپڑے","clothes","shoes","joote","जूते","جوتے","daraz"]],
  ["Personal care",["haircut","salon","सैलून","سیلون","barber"]],
  ["Family",["ammi","अम्मी","امی","abbu","अब्बू","ابو","family","फैमिली","فیملی"]],
  ["Charity",["sadqa","सदक़ा","सदका","صدقہ","charity","khairat","ख़ैरात","خیرات","zakat","ज़कात","زکوٰۃ","زکات"]],
  ["Bank fees",["fee","फीस","فیس","charges","चार्ज","چارجز","tax","टैक्स","ٹیکس"]],
- ["Sent to people",["bheje","bheja","भेजे","भेजा","بھیجے","بھیجا","sent"]]];
+ ["Sent to people",["sent to","send to","bheje","bheja","भेजे","भेजा","بھیجے","بھیجا","sent"]]];
+const MONTHS={january:1,jan:1,february:2,feb:2,march:3,mar:3,april:4,apr:4,may:5,june:6,jun:6,july:7,jul:7,august:8,aug:8,september:9,sep:9,sept:9,october:10,oct:10,november:11,nov:11,december:12,dec:12,
+ "जनवरी":1,"फ़रवरी":2,"फरवरी":2,"मार्च":3,"अप्रैल":4,"मई":5,"जून":6,"जुलाई":7,"अगस्त":8,"सितंबर":9,"सितम्बर":9,"अक्टूबर":10,"अक्तूबर":10,"नवंबर":11,"नवम्बर":11,"दिसंबर":12,"दिसम्बर":12,
+ "جنوری":1,"فروری":2,"مارچ":3,"اپریل":4,"مئی":5,"جون":6,"جولائی":7,"اگست":8,"ستمبر":9,"اکتوبر":10,"نومبر":11,"دسمبر":12};
+const ORDW={first:1,second:2,third:3,fourth:4,fifth:5,sixth:6,seventh:7,eighth:8,ninth:9,tenth:10,eleventh:11,twelfth:12,thirteenth:13,fourteenth:14,fifteenth:15,sixteenth:16,seventeenth:17,eighteenth:18,nineteenth:19,twentieth:20,thirtieth:30,pehli:1,"पहली":1,"پہلی":1};
+const WEEK={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+const RELD={today:0,tonight:0,yesterday:-1,aaj:0,"आज":0,"آج":0,kal:-1,"कल":-1,"کل":-1,parson:-2,"परसों":-2,"پرسوں":-2};
+const SUFX=new Set(["th","st","nd","rd"]), DAYW=new Set(["day","days","din","दिन","دن"]), AGOW=new Set(["ago","back","pehle","पहले","پہلے"]);
+const DATEW=new Set(["tareekh","tarikh","तारीख","تاریخ","date"]);
+const TIMEW=new Set(["am","pm","o'clock","oclock","baje","बजे","بجے"]);
+const UNITW=new Set(["kg","kgs","kilo","kilos","kilogram","kilograms","g","gm","gms","gram","grams","litre","litres","liter","liters","ltr","ml","dozen","dozens","packet","packets","pack","packs","piece","pieces","pcs","pc","bottle","bottles","box","boxes","plate","plates","cup","cups","people","person","persons","ticket","tickets","item","items","times","hour","hours","hrs","minute","minutes","mins","km","kms","percent","%","किलो","ग्राम","लीटर","दर्जन","पैकेट","पीस","बोतल","کلو","گرام","لیٹر","درجن","پیکٹ","پیس","بوتل"]);
 function vNorm(t){
   t=String(t||"").replace(/[०-९]/g,d=>"०१२३४५६७८९".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-  t=t.toLowerCase().replace(/(\d),(?=\d)/g,"$1").replace(/(\d)\.(?!\d)/g,"$1 |").replace(/[,;।۔!?\n•·:]+/g," | ").replace(/\.(?!\d)/g," | ");
+  t=t.toLowerCase().replace(/[₹₨]/g," rs ").replace(/\b([ap])\.\s?m\b\.?/g," $1m ").replace(/\b(\d{1,2}):(\d{2})\b/g," @time ");
+  t=t.replace(/(\d),(?=\d{3}\b)/g,"$1").replace(/(\d)\.(?!\d)/g,"$1 |").replace(/[,;।۔!?\n•·:]+/g," | ").replace(/\.(?!\d)/g," | ");
   t=t.replace(/(\d)([^\d\s.])/g,"$1 $2").replace(/([^\d\s.])(\d)/g,"$1 $2");
   return t.split(/\s+/).filter(Boolean);
 }
-function vNum(T,i){ let total=0,cur=0,pre=0,used=false,last="",j=i;
-  for(;j<T.length;j++){ const t=T[j];
+function vDayNum(T,i){ const t=T[i]; if(t==null) return null;
+  if(/^\d{1,2}$/.test(t)){ let len=1; if(SUFX.has(T[i+1])) len=2; return {v:+t,len,suf:len===2}; }
+  if(t in ORDW) return {v:ORDW[t],len:1,suf:true};
+  if((t==="twenty"||t==="thirty") && T[i+1] in ORDW && ORDW[T[i+1]]<10) return {v:NUMW[t]+ORDW[T[i+1]],len:2,suf:true};
+  if((t==="twenty"||t==="thirty") && T[i+1] in NUMW && NUMW[T[i+1]]<10) return {v:NUMW[t]+NUMW[T[i+1]],len:2,suf:false};
+  if(t in NUMW && NUMW[t]>=1 && NUMW[t]<=31) return {v:NUMW[t],len:1,suf:false};
+  return null; }
+function vYmd(dt){ return dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate()); }
+function vToday(){ const [y,m,d]=todayStr().split("-").map(Number); return new Date(y,m-1,d); }
+function vMk(d,m,y){ const now=vToday(); let yy=y||now.getFullYear(); let dt=new Date(yy,m-1,d); if(dt.getMonth()!==m-1||d<1) return null; if(!y && dt>now){ dt=new Date(yy-1,m-1,d); } return vYmd(dt); }
+function vOff(n){ const dt=vToday(); dt.setDate(dt.getDate()+n); return vYmd(dt); }
+function vScan(T){ const block=new Set(), keep=new Set(), dates=[];
+  const add=(s,e,date)=>{ if(!date) return false; dates.push({s,e,date}); for(let x=s;x<e;x++) block.add(x); return true; };
+  const yearAt=j=>{ if(/^(19|20)\d\d$/.test(T[j]||"")) return [+T[j],1]; if(T[j]==="|" && /^(19|20)\d\d$/.test(T[j+1]||"")) return [+T[j+1],2]; return [0,0]; };
+  for(let i=0;i<T.length;i++){ if(block.has(i)) continue; const t=T[i];
+    if(t==="@time"){ block.add(i); continue; }
+    if(/^\d{9,}$/.test(t)){ block.add(i); continue; }
+    if(t==="day" && T[i+1]==="before" && T[i+2]==="yesterday"){ add(i,i+3,vOff(-2)); continue; }
+    if(t==="this" && ["morning","evening","afternoon"].includes(T[i+1])){ add(i,i+2,vOff(0)); continue; }
+    if(t in RELD){ add(i,i+1,vOff(RELD[t])); continue; }
+    if(t in WEEK || ((t==="last"||t==="on"||t==="pichle") && T[i+1] in WEEK)){ const last=t==="last"||t==="pichle", w=WEEK[t in WEEK?t:T[i+1]], len=t in WEEK?1:2;
+      const now=vToday(); let back=(now.getDay()-w+7)%7; if(last && back===0) back=7; add(i,i+len,vOff(-back)); continue; }
+    const dn=vDayNum(T,i);
+    if(dn){ let j=i+dn.len; if(T[j]==="of") j++;
+      if(T[j] in MONTHS){ const [y,yl]=yearAt(j+1); if(add(i,j+1+yl,vMk(dn.v,MONTHS[T[j]],y))) continue; }
+      if(DAYW.has(T[j]) && AGOW.has(T[j+1])){ add(i,j+2,vOff(-dn.v)); continue; }
+      if(DATEW.has(T[j]) || (dn.suf && (T[i-1]==="the"||T[i-1]==="on"))){ const now=vToday(); let m=now.getMonth()+1, y=now.getFullYear(); if(dn.v>now.getDate()){ m--; if(m<1){ m=12; y--; } } if(add(i,DATEW.has(T[j])?j+1:i+dn.len,vMk(dn.v,m,y))) continue; }
+      if((T[j]==="/"||T[j]==="-") && /^\d{1,2}$/.test(T[j+1]||"") && +T[j+1]<=12 && +T[j+1]>=1){ let e=j+2, y=0; if(T[e]===T[j] && /^\d{2,4}$/.test(T[e+1]||"")){ y=+T[e+1]; if(y<100) y+=2000; e+=2; } if(add(i,e,vMk(dn.v,+T[j+1],y))) continue; }
+      if(TIMEW.has(T[j])){ for(let x=i;x<=j;x++) block.add(x); continue; }
+    }
+    if(t in MONTHS && t!=="may" || (t==="may" && vDayNum(T,i+1))){ const d2=vDayNum(T,i+1); if(d2){ const [y,yl]=yearAt(i+1+d2.len); if(add(i,i+1+d2.len+yl,vMk(d2.v,MONTHS[t],y))) continue; } }
+    if((/^\d+(\.\d+)?$/.test(t) || t in NUMW || t==="a" || t==="half") && UNITW.has(T[i+1])){ block.add(i); keep.add(i); continue; }
+  }
+  return {block,keep,dates}; }
+function vNum(T,i,block){ let total=0,cur=0,pre=0,used=false,last="",j=i;
+  for(;j<T.length;j++){ const t=T[j]; if(block && block.has(j)) break;
+    if((t==="a"||t==="an") && T[j+1] in MULT && !used){ cur=1; used=true; last="w"; continue; }
+    if(t==="and" && last==="m" && (/^\d/.test(T[j+1]||"") || T[j+1] in NUMW)){ continue; }
     if(/^\d+(\.\d+)?$/.test(t)){ if(last==="d"||last==="w") break; cur+=parseFloat(t)+pre; pre=0; used=true; last="d"; continue; }
     const soft={do:2,nau:9,saath:60}[t];
     if(soft && T[j+1] in MULT && last!=="d" && last!=="w"){ cur+=soft+pre; pre=0; used=true; last="w"; continue; }
-    if(t in NUMW){ const v=NUMW[t]; if(last==="d") break; if(last==="w" && !(cur%10===0 && cur>=20 && v<10)) break; cur+=v+pre; pre=0; used=true; last="w"; continue; }
+    if(t in NUMW){ const v=NUMW[t]; if(last==="d") break;
+      if(last==="w"){ if(cur%10===0 && cur>=20 && cur<100 && v<10){ cur+=v; continue; } if(cur>=1 && cur<100 && v>=10 && v<100 && cur%100===cur){ cur=cur*100+v; continue; } break; }
+      cur+=v+pre; pre=0; used=true; last="w"; continue; }
     if(t in FRAC){ if(last==="d"||last==="w") break; cur+=FRAC[t]; used=true; last="w"; continue; }
     if(t in PRE){ if(last==="d"||last==="w") break; pre=PRE[t]; used=true; last="p"; continue; }
     if(t in MULT && last==="p"){ cur+=1+pre; pre=0; last="w"; }
@@ -397,37 +448,45 @@ function vNum(T,i){ let total=0,cur=0,pre=0,used=false,last="",j=i;
 function vHas(str,words){ return words.find(w=>{ if(/^[a-z]/.test(w)) return new RegExp("(^|\\s)"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\w*").test(str); return str.indexOf(w)>=0; }); }
 function vEntry(words){
   const str=" "+words.join(" ")+" ";
-  let type="Spent"; if(vHas(str,TYPEW.Moved)) type="Moved"; else if(vHas(str,TYPEW.Spent)) type="Spent"; else if(vHas(str,TYPEW.Received)) type="Received";
+  let type="Spent"; if(vHas(str,TYPEW.Moved)) type="Moved"; else if(vHas(str,TYPEW.Car)) type="Car"; else if(vHas(str,TYPEW.Recv)) type="Received"; else if(vHas(str,TYPEW.Spent)) type="Spent"; else if(vHas(str,TYPEW.Received)) type="Received";
   const names=acctNames(), found=[];
   names.forEach(n=>{ let pos=-1, len=0; accSyn(n).forEach(w=>{ const k=str.indexOf(/^[a-z]/.test(w)?" "+w:w); if(k>=0 && (pos<0||k<pos)){ pos=k; len=w.length; } }); if(pos>=0) found.push([pos,n,len]); });
   found.sort((a,b)=>a[0]-b[0]);
   const isFrom=f=>/^\s*(se|से|سے|say)(\s|$)/.test(str.slice(f[0]+f[2]+(str[f[0]]===" "?1:0)));
   if(found.length>=2){ const fi=found.findIndex(isFrom); if(fi>0) found.unshift(found.splice(fi,1)[0]); }
   const accs=found.map(x=>x[1]);
-  if(accs.length>=2 && type!=="Received") type="Moved";
+  if(accs.length>=2 && type!=="Received" && type!=="Car") type="Moved";
   let cat="";
   if(type==="Spent"){ for(const [c,ws] of CATW){ if(vHas(str,ws)){ const real=S.categories.find(x=>x.toLowerCase()===c.toLowerCase()); if(real){ cat=real; break; } } } if(!cat) cat=S.categories.includes("Other")?"Other":(S.categories[0]||"Other"); }
   let from="", to="";
   if(type==="Moved"){ from=accs[0]||(names.includes("Bank")?"Bank":names[0]); to=accs[1]||(accs[0]&&accs[0]!=="Cash"&&names.includes("Cash")?"Cash":(from==="Cash"?(names.find(n=>n!=="Cash")||""):"Cash")); if(accs.length===1 && accs[0]==="Cash" && vHas(str,["atm","एटीएम","nikale","निकाले","نکالے"])){ from=names.includes("Bank")?"Bank":names[0]; to="Cash"; } }
+  else if(type==="Car"){ to=S.goal.account; from=accs.find(n=>n!==to)||S.defaults.saveFrom; }
   else from=accs[0]||(type==="Received"?S.defaults.received:S.defaults.spent);
   if(type==="Moved" && to && to===S.goal.account && from!==S.goal.account) type="Car";
   const drop=new Set([...FILL,"andar","अंदर","اندر","hua","हुआ","ہوا","add","ایڈ","ऐड","dale","daale","डाले","ڈالے","naya","pay","नया","پے","نیا","jazz","easy","paisa","sada","wapas","वापस","واپس"]); Object.values(TYPEW).flat().forEach(w=>drop.add(w)); Object.values(ACCW).flat().forEach(w=>w.split(" ").forEach(x=>drop.add(x))); names.forEach(n=>drop.add(n.toLowerCase()));
   const note=words.filter(w=>!drop.has(w) && !SEPW.has(w) && !(w in NUMW) && !(w in MULT) && !(w in FRAC) && !(w in PRE) && !/^\d+(\.\d+)?$/.test(w)).join(" ").trim();
-  return {type,cat,from,to,note:note?note.charAt(0).toUpperCase()+note.slice(1):""};
+  const note2=type==="Car"?note.split(" ").filter(w=>!["saved","save","saving","savings","fund","car"].includes(w.toLowerCase())).join(" "):note;
+  const nn=note2.replace(/\u200b/g,"").replace(/\s+/g," ").trim();
+  return {type,cat,from,to,note:nn?nn.charAt(0).toUpperCase()+nn.slice(1):""};
 }
 function parseSpoken(text){
   let src=String(text||"");
   if(src.indexOf("•")>=0) src=src.split("\n").filter(l=>l.trim().startsWith("•")).join(" | ");
-  const T=vNorm(src), spans=[];
-  for(let i=0;i<T.length;){ const n=vNum(T,i); if(n){ spans.push({s:i,e:n.end,v:n.v}); i=n.end; } else i++; }
+  const T=vNorm(src), sc=vScan(T), spans=[];
+  for(let i=0;i<T.length;){ if(sc.block.has(i)){ i++; continue; } const n=vNum(T,i,sc.block); if(n){ spans.push({s:i,e:n.end,v:n.v}); i=n.end; } else i++; }
+  let carry=todayStr();
   return spans.map((sp,k)=>{
     const prevEnd=k?spans[k-1].e:0, nextStart=k<spans.length-1?spans[k+1].s:T.length;
     let a=prevEnd, b=nextStart;
     if(k>0){ for(let x=sp.s-1;x>=prevEnd;x--) if(T[x]==="|"){ a=x+1; break; } if(a===prevEnd){ a=sp.s; } }
     if(k<spans.length-1){ for(let x=sp.e;x<nextStart;x++) if(T[x]==="|"){ b=x; break; } }
     if(k===0) a=0;
-    const words=T.slice(a,sp.s).concat(T.slice(sp.e,b)).filter(w=>w!=="|");
-    return Object.assign({amount:sp.v, date:todayStr()}, vEntry(words));
+    let date=carry; const own=sc.dates.find(d=>d.s>=a && d.e<=b);
+    if(own){ date=own.date; if(own.s<sp.s) carry=own.date; }
+    const inDate=x=>sc.dates.some(d=>x>=d.s && x<d.e);
+    const idx=[]; for(let x=a;x<sp.s;x++) idx.push(x); for(let x=sp.e;x<b;x++) idx.push(x);
+    const words=idx.filter(x=>T[x]!=="|" && !inDate(x) && T[x]!=="@time" && !(sc.block.has(x) && !sc.keep.has(x)) && !(TIMEW.has(T[x]) && sc.block.has(x-1))).map(x=>sc.keep.has(x)?T[x]+"​":T[x]);
+    return Object.assign({amount:sp.v, date}, vEntry(words));
   }).filter(e=>e.amount>0);
 }
 window.__parseSpoken=parseSpoken;
@@ -436,16 +495,15 @@ function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (naviga
 function vLang(){ try{ return localStorage.getItem("mm.vlang")||"ur"; }catch(e){ return "ur"; } }
 function openVoice(listen){ voice={text:"",items:[],listening:false,msg:""}; drawVoice(); if(listen) setTimeout(startRec,150); }
 function vItemRow(e,i){ const what=e.type==="Spent"?e.cat:e.type==="Received"?"Money in":e.type==="Car"?"Saved for "+(S.goal.name||"goal").toLowerCase():"Moved";
-  const sub=[e.type==="Moved"||e.type==="Car"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
+  const sub=[e.date!==todayStr()?shortDate(e.date):"", e.type==="Moved"||e.type==="Car"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
   return `<div class="vrow"><span class="dot ${e.type==="Spent"?"d-out":e.type==="Received"?"d-in":e.type==="Car"?"d-car":"d-mv"}" aria-hidden="true">${e.type==="Spent"?"−":e.type==="Received"?"+":e.type==="Car"?"★":"⇄"}</span><span class="txt"><span class="t1">${esc(what)} · ${rs(e.amount)}</span><span class="t2">${esc(sub)}</span></span><button class="x" data-vedit="${i}" aria-label="Change">✎</button><button class="x" data-vdel="${i}" aria-label="Remove">×</button></div>`; }
 function drawVoice(){
   const host=document.getElementById("sheetHost"); if(!voice){ host.innerHTML=""; return; }
   const L=vLang(), on=voice.listening;
   host.innerHTML=`<div class="sheet" id="vBg"><div class="panel" role="dialog" aria-modal="true" aria-label="Speak or paste">
     <div class="row"><h2>Speak or paste</h2><button class="linkbtn" id="vClose">Close</button></div>
-    <div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="Language"><button type="button" data-vlang="ur" aria-pressed="${L==="ur"}" style="${L==="ur"?"background:var(--cob);color:#fff;border-color:transparent":""}">اردو Urdu</button><button type="button" data-vlang="en" aria-pressed="${L==="en"}" style="${L==="en"?"background:var(--cob);color:#fff;border-color:transparent":""}">English</button></div>
     <div class="micwrap"><button class="mic ${on?"on":""}" id="vMic" aria-label="${on?"Stop listening":"Start listening"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${on?'<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/>':'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'}</svg></button>
-      <p class="micnote" id="vNote">${on?"Listening… speak, then tap to stop":"Tap the mic and speak. Say one or many, like: 500 khana, 1200 petrol bank se"}</p></div>
+      <p class="micnote" id="vNote">${on?"Listening… speak, then tap to stop":"Tap the mic and speak in English. Say one or many, like: 500 food, 1200 petrol from bank, 300 tea cash, 24th November"}</p></div>
     <textarea id="vtext" placeholder="Or paste here (from Voice Memos or your Back Tap shortcut)">${esc(voice.text)}</textarea>
     <div class="btnrow"><button class="ghost" id="vPaste">Paste</button><button class="ghost" id="vRead">Read entries</button></div>
     <p class="err" id="vErr">${esc(voice.msg||"")}</p>
@@ -453,13 +511,13 @@ function drawVoice(){
     <button class="primary" id="vSave">Save all (${voice.items.length})</button>`:""}
   </div></div>`;
 }
-function vReadText(){ const ta=document.getElementById("vtext"); if(ta) voice.text=ta.value; voice.items=parseSpoken(voice.text); voice.msg=voice.text.trim()&&!voice.items.length?"I couldn't find an amount. Say a number, like 500 or paanch sau.":""; drawVoice(); }
+function vReadText(){ const ta=document.getElementById("vtext"); if(ta) voice.text=ta.value; voice.items=parseSpoken(voice.text); voice.msg=voice.text.trim()&&!voice.items.length?"I couldn't find an amount. Say a number, like 500 or twelve hundred.":""; drawVoice(); }
 function startRec(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ voice.msg="Voice isn't available here. Tap the box and use the mic on your keyboard instead."; drawVoice(); return; }
   const ta=document.getElementById("vtext"); if(ta) voice.text=ta.value;
   const base=voice.text.trim(); let fin="";
-  rec=new SR(); rec.lang=vLang()==="ur"?(isIOS()?"hi-IN":"ur-PK"):"en-IN"; rec.continuous=true; rec.interimResults=true;
+  rec=new SR(); rec.lang="en-IN"; rec.continuous=true; rec.interimResults=true;
   rec.onresult=e=>{ let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin+=r[0].transcript+" "; else interim+=r[0].transcript; }
     voice.text=(base?base+" , ":"")+(fin+interim).trim(); const t=document.getElementById("vtext"); if(t) t.value=voice.text; };
   rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ voice.listening=false; voice.msg="Please allow the microphone for My Money, then tap the mic again."; drawVoice(); } };
@@ -730,9 +788,8 @@ function viewSettings(){
   <details class="card sect help" data-sec="help" ${openSecs.has("help")?"open":""}><summary>How to use My Money</summary><div class="sectbody"><ul style="margin:0;padding-left:18px">
     <li><b>Add an entry:</b> tap the big <b>+</b>. Pick Spent, Received, Moved or ${esc(S.goal.name||"Goal")}, type the amount, tap Save.</li>
     <li><b>Spent</b> is money that left you. <b>Received</b> is money that came in. <b>Moved</b> is between your own accounts, like an ATM withdrawal.</li>
-    <li><b>Speak:</b> tap <b>Speak or paste</b> on Home, tap the mic, say one or many entries ("500 khana, 1200 petrol bank se, 300 chai cash"), tap the mic again, check the list, tap <b>Save all</b>. Choose <b>اردو Urdu</b> or <b>English</b> above the mic.</li>
+    <li><b>Speak:</b> tap <b>Speak or paste</b> on Home, tap the mic and speak in English. Say one or many, like "500 food, 1200 petrol from bank, 300 tea cash". Add a date if it wasn't today, like "yesterday" or "24th November". Tap the mic again, check the list, tap <b>Save all</b>.</li>
     <li><b>Speak while looking at your bank app (Voice Memos):</b> open Voice Memos and tap record. Switch to your bank app and say each transaction. Go back, stop, open the recording, tap the transcript icon, select all and Copy. In My Money tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
-    <li><b>Back Tap shortcut (speak over any app):</b> in the Shortcuts app make a new shortcut with these actions: <b>Dictate Text</b> (Language: Hindi for Urdu), <b>Get Clipboard</b>, <b>Text</b> (put Clipboard, a new line, then • and Dictated Text), <b>Copy to Clipboard</b>, <b>Show Notification</b>. Then Settings ▸ Accessibility ▸ Touch ▸ Back Tap ▸ Double Tap ▸ pick it. In your bank app, double-tap the back of the phone and say one entry, repeat, then in My Money tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
     <li><b>People:</b> money you lent or borrowed. It changes your balance but isn't counted as spending or income. Tap <b>Paid back</b> when it's returned.</li>
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
