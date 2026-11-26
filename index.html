@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.20 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.21 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -398,7 +398,9 @@ body{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px
 .srpanel{min-height:100%;border-radius:0;padding-top:max(14px,env(safe-area-inset-top,0px))}
 .srpanel .search{flex:1}
 .srpanel .row{gap:12px}
-html,body,button,a,input,select,textarea,.wc,.item,svg{touch-action:manipulation}
+html,body,button,a,input,select,textarea,.wc,.item,svg{touch-action:pan-y}
+html,body{overscroll-behavior-x:none;overflow-x:hidden;max-width:100%}
+#app{overflow-x:clip}
 .mhead .mrow{gap:6px}
 .gbtn svg path{fill:none}
 .glab{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:6px 4px -4px}
