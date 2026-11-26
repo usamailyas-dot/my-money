@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My Money">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.6 (9 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.7 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -161,6 +161,21 @@ input,select{font:500 16px var(--font);color:var(--ink);background:var(--surface
 @media (prefers-reduced-motion: no-preference){.panel{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 
 /* ---- Wallet Cards look ---- */
+.voicebtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:20px;padding:15px;background:var(--cob);color:#fff;font:700 16px var(--font);cursor:pointer;box-shadow:var(--lift)}
+.voicebtn svg{width:22px;height:22px}
+.micwrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0}
+.mic{width:92px;height:92px;border-radius:50%;border:0;background:var(--cob);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 26px rgba(10,95,138,.35);position:relative}
+.mic svg{width:38px;height:38px}
+.mic.on{background:#C6432C;box-shadow:0 10px 26px rgba(198,67,44,.4)}
+@media (prefers-reduced-motion: no-preference){.mic.on::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid rgba(198,67,44,.45);animation:pulse 1.2s ease-out infinite}@keyframes pulse{from{transform:scale(.92);opacity:1}to{transform:scale(1.18);opacity:0}}}
+.micnote{font-weight:600;font-size:14px;color:var(--muted);text-align:center}
+#vtext{font:500 16px var(--font);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;width:100%;min-height:96px;resize:vertical}
+.vrow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.vrow:last-child{border-bottom:0}
+.vrow .txt{flex:1;min-width:0}
+.vrow .t1{font-weight:700;font-size:14.5px;display:block}
+.vrow .t2{font-size:12.5px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 .skyhero{position:relative;margin:-18px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:18px max(16px,env(safe-area-inset-left,0px)) 64px;color:#fff;overflow:hidden;min-height:350px}
 .skyhero .skybg{position:absolute;inset:0;z-index:0}
 .skyhero .skyart{position:absolute;left:0;right:0;bottom:0;width:100%;height:170px;z-index:0}
@@ -329,6 +344,130 @@ function skyNow(){
     <path d="M0 140 Q110 108 210 130 T390 122 L390 170 L0 170Z" fill="${P[key][3]}"/></svg>`;
   return {label:P[key][0], bg:P[key][1], art};
 }
+/* ---------- voice: read spoken or pasted text into entries ---------- */
+const NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,
+ ek:1,teen:3,char:4,chaar:4,panch:5,paanch:5,chay:6,chhe:6,saat:7,aath:8,das:10,gyarah:11,barah:12,baara:12,terah:13,chaudah:14,pandrah:15,solah:16,satrah:17,atharah:18,unees:19,bees:20,pachees:25,pachchees:25,tees:30,chalees:40,chaalees:40,pachas:50,pachaas:50,sattar:70,assi:80,nabbe:90,
+ "एक":1,"दो":2,"तीन":3,"चार":4,"पांच":5,"पाँच":5,"छह":6,"छः":6,"छे":6,"सात":7,"आठ":8,"नौ":9,"दस":10,"ग्यारह":11,"बारह":12,"तेरह":13,"चौदह":14,"पंद्रह":15,"पन्द्रह":15,"सोलह":16,"सत्रह":17,"अठारह":18,"उन्नीस":19,"बीस":20,"पच्चीस":25,"तीस":30,"पैंतीस":35,"चालीस":40,"पचास":50,"साठ":60,"सत्तर":70,"अस्सी":80,"नब्बे":90,
+ "ایک":1,"دو":2,"تین":3,"چار":4,"پانچ":5,"چھ":6,"سات":7,"آٹھ":8,"نو":9,"دس":10,"گیارہ":11,"بارہ":12,"تیرہ":13,"چودہ":14,"پندرہ":15,"سولہ":16,"سترہ":17,"اٹھارہ":18,"انیس":19,"بیس":20,"پچیس":25,"تیس":30,"چالیس":40,"پچاس":50,"ساٹھ":60,"ستر":70,"اسی":80,"نوے":90};
+const MULT={hundred:100,sau:100,"सौ":100,"سو":100,thousand:1000,hazar:1000,hazaar:1000,hajar:1000,"हज़ार":1000,"हजार":1000,"ہزار":1000,k:1000,lakh:1e5,lac:1e5,lacs:1e5,lakhs:1e5,"लाख":1e5,"لاکھ":1e5,crore:1e7,karor:1e7,"करोड़":1e7,"کروڑ":1e7};
+const FRAC={derh:1.5,dedh:1.5,"डेढ़":1.5,"डेढ":1.5,"ڈیڑھ":1.5,dhai:2.5,dhaai:2.5,"ढाई":2.5,"ڈھائی":2.5};
+const PRE={sade:.5,saade:.5,sarhe:.5,"साढ़े":.5,"साढे":.5,"ساڑھے":.5,sawa:.25,"सवा":.25,"سوا":.25,paune:-.25,"पौने":-.25,"پونے":-.25};
+const SEPW=new Set(["|","and","aur","और","اور","then","phir","fir","फिर","پھر"]);
+const FILL=new Set(["se","से","سے","mein","main","में","میں","me","ka","ki","ke","का","की","के","کا","کی","کے","ko","को","کو","rs","rupees","rupay","rupaye","रुपये","रुपए","रूपए","روپے","روپیہ","pkr","the","for","on","of","from","to","in","a","ne","ने","نے","hai","है","ہے","tha","था","تھا"]);
+const TYPEW={Moved:["atm","एटीएम","اے ٹی ایم","nikale","nikaale","nikala","निकाले","निकाला","نکالے","نکالا","withdraw","transfer","ट्रांसफर","ٹرانسفر","moved"],
+ Spent:["kharcha","kharch","ख़र्चा","खर्चा","खर्च","خرچہ","خرچ","spent","diye","diya","दिए","दिया","دیے","دیا","liya","liye","लिया","लिए","لیا","لیے","paid","pay"],
+ Received:["received","mila","mile","mili","मिला","मिले","मिली","ملا","ملے","ملی","aaye","aaya","आए","आया","आये","آئے","آیا","salary","सैलरी","سیلری","tankhwah","तनख्वाह","تنخواہ","income","got"]};
+const ACCW={bank:["bank","बैंक","بینک","card","कार्ड","کارڈ"],cash:["cash","कैश","کیش","wallet","वॉलेट","والٹ","jeb","जेब","جیب","naqad","नकद","نقد"]};
+const CATW=[["Rent",["rent","रेंट","رینٹ","kiraya","किराया","کرایہ"]],
+ ["Subscriptions",["subscription","netflix","youtube","यूट्यूब","icloud","hbo","spotify","canva","prime","chatgpt"]],
+ ["Mobile & phone",["mobile","मोबाइल","موبائل","phone","फ़ोन","फोन","فون","load","लोड","لوڈ","package","पैकेज","پیکج"]],
+ ["Bills",["bill","बिल","بل","bijli","बिजली","بجلی","electric","gas","गैस","گیس","internet","इंटरनेट","انٹرنیٹ","wifi"]],
+ ["Fuel & Transport",["petrol","पेट्रोल","پیٹرول","پٹرول","fuel","careem","करीम","کریم","uber","उबर","اوبر","indrive","yango","bykea","rickshaw","रिक्शा","رکشہ","taxi","टैक्सी","ٹیکسی","parking","पार्किंग","پارکنگ","toll"]],
+ ["Eating Out",["restaurant","रेस्टोरेंट","ریسٹورنٹ","hotel","chai","चाय","چائے","burger","बर्गर","برگر","pizza","पिज़्ज़ा","पिज्जा","پیزا","foodpanda","फूडपांडा","dinner","डिनर","lunch","लंच","coffee","कॉफी","कॉफ़ी"]],
+ ["Food",["food","grocer","khana","khaana","खाना","کھانا","sabzi","सब्ज़ी","सब्जी","سبزی","doodh","दूध","دودھ","atta","आटा","آٹا","fruit","फल","پھل","ration","राशन","راشن","anday","अंडे","انڈے"]],
+ ["Health",["doctor","डॉक्टर","ڈاکٹر","dawai","dawa","दवाई","दवा","دوائی","دوا","medicine","hospital","अस्पताल","ہسپتال","pharmacy","फार्मेसी"]],
+ ["Gym",["gym","जिम","جم"]],
+ ["Shopping",["shopping","शॉपिंग","شاپنگ","kapde","कपड़े","कपडे","کپڑے","clothes","shoes","joote","जूते","جوتے","daraz"]],
+ ["Personal care",["haircut","salon","सैलून","سیلون","barber"]],
+ ["Family",["ammi","अम्मी","امی","abbu","अब्बू","ابو","family","फैमिली","فیملی"]],
+ ["Charity",["sadqa","सदक़ा","सदका","صدقہ","charity","khairat","ख़ैरात","خیرات","zakat","ज़कात","زکوٰۃ","زکات"]],
+ ["Bank fees",["fee","फीस","فیس","charges","चार्ज","چارجز","tax","टैक्स","ٹیکس"]],
+ ["Sent to people",["bheje","bheja","भेजे","भेजा","بھیجے","بھیجا","sent"]]];
+function vNorm(t){
+  t=String(t||"").replace(/[०-९]/g,d=>"०१२३४५६७८९".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+  t=t.toLowerCase().replace(/(\d),(?=\d)/g,"$1").replace(/(\d)\.(?!\d)/g,"$1 |").replace(/[,;।۔!?\n•·:]+/g," | ").replace(/\.(?!\d)/g," | ");
+  t=t.replace(/(\d)([^\d\s.])/g,"$1 $2").replace(/([^\d\s.])(\d)/g,"$1 $2");
+  return t.split(/\s+/).filter(Boolean);
+}
+function vNum(T,i){ let total=0,cur=0,pre=0,used=false,last="",j=i;
+  for(;j<T.length;j++){ const t=T[j];
+    if(/^\d+(\.\d+)?$/.test(t)){ if(last==="d"||last==="w") break; cur+=parseFloat(t)+pre; pre=0; used=true; last="d"; continue; }
+    const soft={do:2,nau:9,saath:60}[t];
+    if(soft && T[j+1] in MULT && last!=="d" && last!=="w"){ cur+=soft+pre; pre=0; used=true; last="w"; continue; }
+    if(t in NUMW){ const v=NUMW[t]; if(last==="d") break; if(last==="w" && !(cur%10===0 && cur>=20 && v<10)) break; cur+=v+pre; pre=0; used=true; last="w"; continue; }
+    if(t in FRAC){ if(last==="d"||last==="w") break; cur+=FRAC[t]; used=true; last="w"; continue; }
+    if(t in PRE){ if(last==="d"||last==="w") break; pre=PRE[t]; used=true; last="p"; continue; }
+    if(t in MULT && last==="p"){ cur+=1+pre; pre=0; last="w"; }
+    if(t in MULT && used && last!=="p"){ const m=MULT[t]; if(m===100) cur=(cur||1)*100; else { total+=(cur||1)*m; cur=0; } last="m"; continue; }
+    break; }
+  const v=total+cur; return used && v>0 ? {v:Math.round(v*100)/100,end:j} : null; }
+function vHas(str,words){ return words.find(w=>{ if(/^[a-z]/.test(w)) return new RegExp("(^|\\s)"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\w*").test(str); return str.indexOf(w)>=0; }); }
+function vEntry(words){
+  const str=" "+words.join(" ")+" ";
+  let type="Spent"; if(vHas(str,TYPEW.Moved)) type="Moved"; else if(vHas(str,TYPEW.Spent)) type="Spent"; else if(vHas(str,TYPEW.Received)) type="Received";
+  const names=acctNames(), found=[];
+  names.forEach(n=>{ const ln=n.toLowerCase(); const syn=ln==="bank"?ACCW.bank:ln==="cash"?ACCW.cash:[ln]; let pos=-1; syn.forEach(w=>{ const k=str.indexOf(w.length<4&&/^[a-z]/.test(w)?" "+w:w); if(k>=0 && (pos<0||k<pos)) pos=k; }); if(pos>=0) found.push([pos,n]); });
+  found.sort((a,b)=>a[0]-b[0]); const accs=found.map(x=>x[1]);
+  let cat="";
+  if(type==="Spent"){ for(const [c,ws] of CATW){ if(vHas(str,ws)){ const real=S.categories.find(x=>x.toLowerCase()===c.toLowerCase()); if(real){ cat=real; break; } } } if(!cat) cat=S.categories.includes("Other")?"Other":(S.categories[0]||"Other"); }
+  let from="", to="";
+  if(type==="Moved"){ from=accs[0]||(names.includes("Bank")?"Bank":names[0]); to=accs[1]||(accs[0]&&accs[0]!=="Cash"&&names.includes("Cash")?"Cash":(from==="Cash"?(names.find(n=>n!=="Cash")||""):"Cash")); if(accs.length===1 && accs[0]==="Cash" && vHas(str,["atm","एटीएम","nikale","निकाले","نکالے"])){ from=names.includes("Bank")?"Bank":names[0]; to="Cash"; } }
+  else from=accs[0]||(type==="Received"?S.defaults.received:S.defaults.spent);
+  const drop=new Set([...FILL]); Object.values(TYPEW).flat().forEach(w=>drop.add(w)); Object.values(ACCW).flat().forEach(w=>drop.add(w)); names.forEach(n=>drop.add(n.toLowerCase()));
+  const note=words.filter(w=>!drop.has(w) && !SEPW.has(w) && !(w in NUMW) && !(w in MULT) && !(w in FRAC) && !(w in PRE) && !/^\d+(\.\d+)?$/.test(w)).join(" ").trim();
+  return {type,cat,from,to,note:note?note.charAt(0).toUpperCase()+note.slice(1):""};
+}
+function parseSpoken(text){
+  let src=String(text||"");
+  if(src.indexOf("•")>=0) src=src.split("\n").filter(l=>l.trim().startsWith("•")).join(" | ");
+  const T=vNorm(src), spans=[];
+  for(let i=0;i<T.length;){ const n=vNum(T,i); if(n){ spans.push({s:i,e:n.end,v:n.v}); i=n.end; } else i++; }
+  return spans.map((sp,k)=>{
+    const prevEnd=k?spans[k-1].e:0, nextStart=k<spans.length-1?spans[k+1].s:T.length;
+    let a=prevEnd, b=nextStart;
+    if(k>0){ for(let x=sp.s-1;x>=prevEnd;x--) if(T[x]==="|"){ a=x+1; break; } if(a===prevEnd){ a=sp.s; } }
+    if(k<spans.length-1){ for(let x=sp.e;x<nextStart;x++) if(T[x]==="|"){ b=x; break; } }
+    if(k===0) a=0;
+    const words=T.slice(a,sp.s).concat(T.slice(sp.e,b)).filter(w=>w!=="|");
+    return Object.assign({amount:sp.v, date:todayStr()}, vEntry(words));
+  }).filter(e=>e.amount>0);
+}
+window.__parseSpoken=parseSpoken;
+let voice=null, rec=null;
+function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1); }
+function vLang(){ try{ return localStorage.getItem("mm.vlang")||"ur"; }catch(e){ return "ur"; } }
+function openVoice(listen){ voice={text:"",items:[],listening:false,msg:""}; drawVoice(); if(listen) setTimeout(startRec,150); }
+function vItemRow(e,i){ const what=e.type==="Spent"?e.cat:e.type==="Received"?"Money in":"Moved";
+  const sub=[e.type==="Moved"?wallet(e.from)+" → "+wallet(e.to):(e.type==="Received"?"into ":"from ")+wallet(e.from), e.note].filter(Boolean).join(" · ");
+  return `<div class="vrow"><span class="dot ${e.type==="Spent"?"d-out":e.type==="Received"?"d-in":"d-mv"}" aria-hidden="true">${e.type==="Spent"?"−":e.type==="Received"?"+":"⇄"}</span><span class="txt"><span class="t1">${esc(what)} · ${rs(e.amount)}</span><span class="t2">${esc(sub)}</span></span><button class="x" data-vedit="${i}" aria-label="Change">✎</button><button class="x" data-vdel="${i}" aria-label="Remove">×</button></div>`; }
+function drawVoice(){
+  const host=document.getElementById("sheetHost"); if(!voice){ host.innerHTML=""; return; }
+  const L=vLang(), on=voice.listening;
+  host.innerHTML=`<div class="sheet" id="vBg"><div class="panel" role="dialog" aria-modal="true" aria-label="Speak or paste">
+    <div class="row"><h2>Speak or paste</h2><button class="linkbtn" id="vClose">Close</button></div>
+    <div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="Language"><button type="button" data-vlang="ur" aria-pressed="${L==="ur"}" style="${L==="ur"?"background:var(--cob);color:#fff;border-color:transparent":""}">اردو Urdu</button><button type="button" data-vlang="en" aria-pressed="${L==="en"}" style="${L==="en"?"background:var(--cob);color:#fff;border-color:transparent":""}">English</button></div>
+    <div class="micwrap"><button class="mic ${on?"on":""}" id="vMic" aria-label="${on?"Stop listening":"Start listening"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${on?'<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/>':'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'}</svg></button>
+      <p class="micnote" id="vNote">${on?"Listening… speak, then tap to stop":"Tap the mic and speak. Say one or many, like: 500 khana, 1200 petrol bank se"}</p></div>
+    <textarea id="vtext" placeholder="Or paste here (from Voice Memos or your Back Tap shortcut)">${esc(voice.text)}</textarea>
+    <div class="btnrow"><button class="ghost" id="vPaste">Paste</button><button class="ghost" id="vRead">Read entries</button></div>
+    <p class="err" id="vErr">${esc(voice.msg||"")}</p>
+    ${voice.items.length?`<section class="card" style="padding-block:4px">${voice.items.map(vItemRow).join("")}</section>
+    <button class="primary" id="vSave">Save all (${voice.items.length})</button>`:""}
+  </div></div>`;
+}
+function vReadText(){ const ta=document.getElementById("vtext"); if(ta) voice.text=ta.value; voice.items=parseSpoken(voice.text); voice.msg=voice.text.trim()&&!voice.items.length?"I couldn't find an amount. Say a number, like 500 or paanch sau.":""; drawVoice(); }
+function startRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ voice.msg="Voice isn't available here. Tap the box and use the mic on your keyboard instead."; drawVoice(); return; }
+  const ta=document.getElementById("vtext"); if(ta) voice.text=ta.value;
+  const base=voice.text.trim(); let fin="";
+  rec=new SR(); rec.lang=vLang()==="ur"?(isIOS()?"hi-IN":"ur-PK"):"en-IN"; rec.continuous=true; rec.interimResults=true;
+  rec.onresult=e=>{ let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin+=r[0].transcript+" "; else interim+=r[0].transcript; }
+    voice.text=(base?base+" , ":"")+(fin+interim).trim(); const t=document.getElementById("vtext"); if(t) t.value=voice.text; };
+  rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ voice.listening=false; voice.msg="Please allow the microphone for My Money, then tap the mic again."; drawVoice(); } };
+  rec.onend=()=>{ if(voice && voice.listening){ try{ rec.start(); return; }catch(x){} } if(voice){ voice.listening=false; vReadText(); } };
+  try{ rec.start(); voice.listening=true; voice.msg=""; drawVoice(); }catch(x){ voice.msg="The mic couldn't start. Try again."; drawVoice(); }
+}
+function stopRec(){ if(!voice) return; voice.listening=false; try{ rec && rec.stop(); }catch(x){} }
+async function saveVoice(){
+  const btn=document.getElementById("vSave"); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+  const pasted=String(voice.text).indexOf("•")>=0; let n=0;
+  try{ for(const e of voice.items){ await entriesCol.doc().set({type:e.type, amount:e.amount, date:e.date||todayStr(), cat:e.type==="Spent"?(e.cat||"Other"):"", bill:"", from:e.from||"", to:e.type==="Moved"?(e.to||""):"", note:e.note||"", before:false, created:Date.now()+n}); n++; }
+    if(pasted){ try{ await navigator.clipboard.writeText(""); }catch(x){} }
+    voice=null; drawVoice(); toast("Saved "+n+" entr"+(n===1?"y":"ies")); }
+  catch(x){ if(btn){ btn.disabled=false; btn.textContent="Save all"; } document.getElementById("vErr").textContent=writeError(x); }
+}
+document.addEventListener("visibilitychange",()=>{ if(document.hidden && voice && voice.listening){ stopRec(); voice.msg="The mic stops when you leave My Money. To speak over your bank app, use Voice Memos or the Back Tap shortcut (Settings ▸ How to use)."; } });
 function lac(n){ return n>=100000 ? (Math.round(n/10000)/10).toString().replace(/\.0$/,"")+" lac" : rs(n); }
 const CARDC=[["var(--cob)","#fff"],["var(--mango)","#2A1A00"],["var(--coral)","#fff"],["var(--mint)","#fff"],["var(--pinkc)","#fff"]];
 const CATC=["#0A5F8A","#D9A21B","#0F8A6A","#E0607E","#5B8DD9","#C6432C","#7A9E3B","#8C5BC7","#E38B2C","#2BA3A0"];
@@ -460,6 +599,7 @@ function viewHome(){
   ${PHONE && !standalone() ?`<section class="card" style="background:var(--mv-soft)"><b>Put My Money on your home screen</b><p class="small" style="margin-top:4px;line-height:1.5">In Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens like an app, full screen, even without internet.</p></section>`:""}
 
   <button class="goaltile" data-tab="car" aria-label="${esc(S.goal.name)} fund"><span class="n"><span>${esc(S.goal.name||"Goal")} fund · ${esc(S.goal.account)}</span><span>${pct.toFixed(1)}% of ${lac(price)}</span></span><span class="amt num">${rs(cf)}</span><span class="grownote">${esc(growNote(pct))}</span>${treeSVG(pct)}</button>
+  <button class="voicebtn" data-voice="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak or paste</button>
   <div class="acts">
     <button class="act" data-add="Spent"><span class="dot d-out" aria-hidden="true">−</span>Spent</button>
     <button class="act" data-add="Received"><span class="dot d-in" aria-hidden="true">+</span>Received</button>
@@ -582,6 +722,9 @@ function viewSettings(){
   <details class="card sect help" data-sec="help" ${openSecs.has("help")?"open":""}><summary>How to use My Money</summary><div class="sectbody"><ul style="margin:0;padding-left:18px">
     <li><b>Add an entry:</b> tap the big <b>+</b>. Pick Spent, Received, Moved or ${esc(S.goal.name||"Goal")}, type the amount, tap Save.</li>
     <li><b>Spent</b> is money that left you. <b>Received</b> is money that came in. <b>Moved</b> is between your own accounts, like an ATM withdrawal.</li>
+    <li><b>Speak:</b> tap <b>Speak or paste</b> on Home, tap the mic, say one or many entries ("500 khana, 1200 petrol bank se, 300 chai cash"), tap the mic again, check the list, tap <b>Save all</b>. Choose <b>اردو Urdu</b> or <b>English</b> above the mic.</li>
+    <li><b>Speak while looking at your bank app (Voice Memos):</b> open Voice Memos and tap record. Switch to your bank app and say each transaction. Go back, stop, open the recording, tap the transcript icon, select all and Copy. In My Money tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
+    <li><b>Back Tap shortcut (speak over any app):</b> in the Shortcuts app make a new shortcut with these actions: <b>Dictate Text</b> (Language: Hindi for Urdu), <b>Get Clipboard</b>, <b>Text</b> (put Clipboard, a new line, then • and Dictated Text), <b>Copy to Clipboard</b>, <b>Show Notification</b>. Then Settings ▸ Accessibility ▸ Touch ▸ Back Tap ▸ Double Tap ▸ pick it. In your bank app, double-tap the back of the phone and say one entry, repeat, then in My Money tap <b>Speak or paste ▸ Paste ▸ Save all</b>.</li>
     <li><b>People:</b> money you lent or borrowed. It changes your balance but isn't counted as spending or income. Tap <b>Paid back</b> when it's returned.</li>
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
@@ -672,7 +815,7 @@ async function restoreBackup(file){
   let o=null; try{ o=JSON.parse(await file.text()); }catch(e){}
   if(!o || o.app!=="my-money" || !o.profile || !Array.isArray(o.entries)){ toast("That isn't a My Money backup file."); return; }
   if(!confirm("Replace everything in this app with the backup from "+String(o.exported||"").slice(0,10)+"? ("+o.entries.length+" entries)")) return;
-  try{ await window.__restore(o); unlocked=o.profile.pinHash||""; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} toast("Restored "+o.entries.length+" entries"); setTimeout(render,60); }
+  try{ await window.__restore(o); unlocked=o.profile.pinHash||""; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} toast("Restored "+o.entries.length+" entr"+(o.entries.length===1?"y":"ies")); setTimeout(render,60); }
   catch(x){ toast(writeError(x)); }
 }
 function sec(id,title,hint,body){ return `<details class="card sect" data-sec="${id}" ${openSecs.has(id)?"open":""}><summary>${esc(title)}${hint?`<small>${esc(hint)}</small>`:""}</summary><div class="sectbody">${body}</div></details>`; }
@@ -736,7 +879,7 @@ async function saveSheet(){
   try{
     if(sheet.editing) await entriesCol.doc(sheet.id).set(doc); else await entriesCol.doc().set(doc);
     const msg=(sheet.editing?"Changed: ":"Saved: ")+(t==="Car"?"saved for "+(S.goal.name||"goal").toLowerCase():t.toLowerCase())+" "+rs(amt);
-    sheet=null; drawSheet(); toast(msg);
+    const back=sheet.back; sheet=null; drawSheet(); toast(msg); if(back && back.items.length){ voice=back; drawVoice(); }
   }catch(x){ btn.disabled=false; btn.textContent="Save"; err.textContent=writeError(x); }
 }
 async function deleteEntry(){
@@ -807,9 +950,20 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
   if(t.id==="sheetBg"){ if(ev.target===t){ sheet=null; drawSheet(); } return; }
+  if(t.id==="vBg"){ if(ev.target===t){ stopRec(); voice=null; drawVoice(); } return; }
+  if(t.dataset.voice){ openVoice(t.dataset.voice==="listen"); return; }
+  if(t.id==="vClose"){ stopRec(); voice=null; drawVoice(); return; }
+  if(t.dataset.vlang){ try{ localStorage.setItem("mm.vlang",t.dataset.vlang); }catch(e){} const ta=document.getElementById("vtext"); if(ta) voice.text=ta.value; if(voice.listening){ stopRec(); } drawVoice(); return; }
+  if(t.id==="vMic"){ if(voice.listening) stopRec(); else startRec(); return; }
+  if(t.id==="vPaste"){ (async()=>{ try{ const c=await navigator.clipboard.readText(); const ta=document.getElementById("vtext"); voice.text=((ta?ta.value:"")+"\n"+c).trim(); vReadText(); }catch(x){ voice.msg="Long-press the box above and tap Paste."; drawVoice(); } })(); return; }
+  if(t.id==="vRead"){ vReadText(); return; }
+  if(t.dataset.vdel!==undefined){ voice.items.splice(+t.dataset.vdel,1); drawVoice(); return; }
+  if(t.dataset.vedit!==undefined){ const i=+t.dataset.vedit, e=voice.items[i]; voice.items.splice(i,1); const keep=voice; voice=null;
+    sheet={editing:false,id:null,confirmDel:false,e:{type:e.type,date:e.date,amount:String(e.amount),cat:e.cat,from:e.from,to:e.to,note:e.note},back:keep}; drawSheet(); return; }
+  if(t.id==="vSave"){ saveVoice(); return; }
   if(t.dataset.snap){ restoreSnap(t.dataset.snap); return; }
   if(t.dataset.act){ readSheetInputs(); sheet.e.act=t.dataset.act; drawSheet(); return; }
   if(t.dataset.who!==undefined){ readSheetInputs(); sheet.e.who=t.dataset.who; drawSheet(); return; }
@@ -832,7 +986,7 @@ document.addEventListener("click", ev=>{
   if(t.dataset.to){ readSheetInputs(); sheet.e.to=t.dataset.to; drawSheet(); return; }
   if(t.dataset.delbill!==undefined){ S.bills.splice(+t.dataset.delbill,1); render(); toast("Removed. Tap Save settings to keep it."); return; }
   if(t.dataset.delcat!==undefined){ S.categories.splice(+t.dataset.delcat,1); render(); toast("Removed. Tap Save settings to keep it."); return; }
-  if(t.id==="closeSheet"){ sheet=null; drawSheet(); return; }
+  if(t.id==="closeSheet"){ const back=sheet&&sheet.back; sheet=null; drawSheet(); if(back){ voice=back; drawVoice(); } return; }
   if(t.id==="saveBtn"){ saveSheet(); return; }
   if(t.id==="delBtn"){ deleteEntry(); return; }
   if(t.id==="addBill"){ S.bills.push({name:"New bill",amount:0,day:"",cat:"Bills",word:""}); render(); return; }
@@ -848,7 +1002,7 @@ document.addEventListener("submit", async ev=>{
 document.addEventListener("toggle", ev=>{ const d=ev.target; if(d && d.dataset && d.dataset.sec){ if(d.open) openSecs.add(d.dataset.sec); else openSecs.delete(d.dataset.sec); } }, true);
 document.addEventListener("change", ev=>{ if(ev.target.id==="rsf" && ev.target.files && ev.target.files[0]){ restoreBackup(ev.target.files[0]); ev.target.value=""; } });
 document.addEventListener("input", ev=>{ if(ev.target.id==="amt"){ const e=document.getElementById("amtErr"); if(e) e.textContent=""; } });
-document.addEventListener("keydown", ev=>{ if(ev.key==="Escape" && sheet){ sheet=null; drawSheet(); } if(ev.key==="Enter" && sheet && ev.target.tagName==="INPUT"){ ev.preventDefault(); saveSheet(); } if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("su-")){ ev.preventDefault(); setupAction(setup.step===3?"finish":"next"); } });
+document.addEventListener("keydown", ev=>{ if(ev.key==="Escape" && voice){ stopRec(); voice=null; drawVoice(); } if(ev.key==="Escape" && sheet){ sheet=null; drawSheet(); } if(ev.key==="Enter" && sheet && ev.target.tagName==="INPUT"){ ev.preventDefault(); saveSheet(); } if(ev.key==="Enter" && ev.target.id && ev.target.id.startsWith("su-")){ ev.preventDefault(); setupAction(setup.step===3?"finish":"next"); } });
 
 /* ---------- start ---------- */
 checkBuild();
