@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.25 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.26 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -459,9 +459,9 @@ body{overflow-x:clip} /* clip, not hidden, so sticky bars keep working */
 /* ---------- state ---------- */
 const DEFAULTS = {
   startDate: todayStr(),
-  accounts: [{name:"Bank",open:0,corr:0},{name:"Cash",open:0,corr:0},{name:"NayaPay",open:0,corr:0}],
-  defaults: {spent:"Bank", received:"Bank", saveFrom:"Bank", saveTo:"NayaPay"},
-  goal: {name:"Car", price:0, already:0, target:"", account:"NayaPay"},
+  accounts: [{name:"Bank",open:0,corr:0},{name:"Cash",open:0,corr:0}],
+  defaults: {spent:"Bank", received:"Bank", saveFrom:"Bank", saveTo:"Bank"},
+  goal: {name:"Savings", price:0, already:0, target:"", account:"Bank"},
   categories: ["Food","Eating Out","Foodpanda","Bills","Fuel & Transport","Rent","Subscriptions","Shopping","Health","Gym","Home","Personal care","Family","Sent to people","Charity","Mobile & phone","Bank fees","Online & card payments","Unknown / check later","Untracked money","Other"],
   catAdd: 4,
   limits: {},
@@ -857,7 +857,10 @@ function ecats(e){ return Array.isArray(e.cats)&&e.cats.length ? e.cats : [e.cat
 function hasCat(e,c){ return ecats(e).includes(c); }
 const FEECATS=["subscriptions","online & card payments"];
 function feeCat(c){ return FEECATS.includes(String(c||"").toLowerCase()); }
-function cardFee(a){ a=+a||0; if(a<=0) return 0; return Math.round((a*0.01+100+16)*100)/100; }
+/* bank fee on card and online payments: each person sets their own. Older profiles keep the original 1% + 116 rule; new people start with it off. */
+function feeRule(){ const f=S.fee; return f && typeof f==="object" ? {on:!!f.on, pct:+f.pct||0, fixed:+f.fixed||0} : {on:true, pct:1, fixed:116}; }
+function feeText(){ const f=feeRule(); return [f.pct?f.pct+"%":"", f.fixed?"Rs "+f.fixed:""].filter(Boolean).join(" + ")||"Rs 0"; }
+function cardFee(a){ a=+a||0; const f=feeRule(); if(a<=0||!f.on) return 0; return Math.round((a*f.pct/100+f.fixed)*100)/100; }
 function bankFeesCat(){ return S.categories.find(x=>x.toLowerCase()==="bank fees")||"Other"; }
 const SRCS=["Person","Project","Family","Other"];
 function recentSources(){ const seen=new Set(), out=[]; sorted(E).forEach(e=>{ if(e.type!=="Received") return; const n=String(e.note||"").trim(); if(!n) return; const k=n.toLowerCase(); if(seen.has(k)) return; seen.add(k); out.push({name:n,src:e.src||""}); }); return out.slice(0,8); }
@@ -1175,7 +1178,11 @@ function viewSettings(){
     <div class="setrow"><span class="small">Money in goes to</span>${sel("d-received",s.defaults.received)}</div>
     <p class="note">Your savings account holds your goal money. It shows on the Goals card and is kept apart from your spending money.</p>
     <div class="setrow"><span class="small">Savings account</span>${sel("g-account",s.goal.account)}</div>
-    <div class="setrow"><span class="small">Savings come from</span>${sel("d-saveFrom",s.defaults.saveFrom)}</div>`)}
+    <div class="setrow"><span class="small">Savings come from</span>${sel("d-saveFrom",s.defaults.saveFrom)}</div>
+    <p class="note">Bank fee on card and online payments. If your bank charges one, the app fills it in for Subscriptions and Online & card payments.</p>
+    <label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="fee-on" style="width:auto" ${feeRule().on?"checked":""}> My bank charges a fee</label>
+    <div class="setrow"><span class="small">Percent of the amount</span><input id="fee-pct" inputmode="decimal" value="${esc(feeRule().pct)}" aria-label="Fee percent"></div>
+    <div class="setrow"><span class="small">Plus a fixed amount (Rs)</span><input id="fee-fixed" inputmode="decimal" value="${esc(feeRule().fixed)}" aria-label="Fixed fee"></div>`)}
     ${sec("lock","PIN lock",s.pinHash?"On":"Off",`
     <div class="setrow"><span class="small">${s.pinHash?"PIN is on. New PIN (leave empty to keep)":"PIN (4 to 8 numbers, optional)"}</span><input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${s.pinHash?"••••":"none"}"></div>
     ${s.pinHash?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinOff" style="width:auto"> Turn the PIN off</label>`:""}
@@ -1209,7 +1216,7 @@ function viewSettings(){
     <li><b>Change or delete</b> an entry: tap it in any list.</li>
     <li><b>Month</b> shows where your money went. Tap a category to see its entries. Use ‹ › for other months.</li>
     <li><b>Bills:</b> tap Mark paid, or pick the bill when you add a Spent. You can change the amount before saving, so bills that change each month still work.</li>
-    <li><b>Bank fees:</b> when you add a Subscription or an Online & card payment, the app fills in the bank fee (1% + Rs 100 + Rs 16 tax) and saves it as its own Bank fees entry. Change it or clear it if it was different.</li>
+    <li><b>Bank fees:</b> if your bank charges a fee on card and online payments, set it in Settings ▸ Main and savings accounts. The app then fills it in when you add a Subscription or an Online & card payment, and saves it as its own Bank fees entry.</li>
     <li><b>Goals:</b> tap the Goals card on Home to see all your goals, open one to see its plan, or add a new goal. When you add money, pick which goal it's for.</li>
     <li><b>Spending limits:</b> on Month, tap a category under "Where it went", then <b>Set a monthly limit</b>. The bar turns amber when you're close and red when you go over. It starts fresh every month.</li>
     <li><b>Not my money:</b> when money only passes through you (someone sends it and you forward it), tap <b>Not my money</b> on Spent or Received. Your balance stays right, but it isn't counted as your income or spending.</li>
@@ -1285,7 +1292,7 @@ async function setupAction(a){
   P.startDate=todayStr();
   P.accounts=[{name:"Bank",open:n("bank"),corr:0},{name:"Cash",open:n("cash"),corr:0}];
   if(place!=="Bank" && place!=="Cash") P.accounts.push({name:place,open:saved,corr:0});
-  P.goal={name:setup.gname||"Savings", price:n("gprice"), already:saved, target:"", account:place}; P.noGoal=!hasGoal;
+  P.goal={name:setup.gname||"Savings", price:n("gprice"), already:saved, target:"", account:place}; P.noGoal=!hasGoal; P.fee={on:false,pct:0,fixed:0};
   const main=setup.gmain==="Wallet"?"Cash":"Bank";
   P.defaults={spent:main, received:main, saveFrom:main, saveTo:place};
   if(setup.pin){ P.pinHash=await hashPin(setup.pin); unlocked=P.pinHash; try{sessionStorage.setItem("mm.unlock",unlocked);}catch(e){} }
@@ -1350,7 +1357,7 @@ function drawSheet(){
     ${t==="Moved"?`<div class="field"><span class="flab">To</span><div class="chips">${names.map(n=>`<button type="button" class="chip" data-to="${esc(n)}" aria-pressed="${n===curTo}">${esc(wallet(n))}</button>`).join("")}</div></div>`:""}
     ${t==="Received"?`<div class="field"><span class="flab">Where it came from</span><div class="chips">${SRCS.map(x=>`<button type="button" class="chip" data-src="${x}" aria-pressed="${e.src===x}">${x}</button>`).join("")}</div></div>`:""}
     <div class="field"><label for="note">${t==="Received"?(e.src==="Project"?"Which project / client":e.src==="Family"?"Who in the family":e.src==="Person"?"Who":"From who / what"):"Note (optional)"}</label><input id="note" autocomplete="off" placeholder="${t==="Received"?"Mark, logo project":t==="Spent"?"electricity":t==="People"?"what it was for":"atm"}" value="${esc(e.note)}">${t==="Received" && recentSources().length?`<div class="chips" style="margin-top:6px">${recentSources().map(x=>`<button type="button" class="chip" data-rname="${esc(x.name)}" data-rsrc="${esc(x.src)}" aria-pressed="${String(e.note||"").toLowerCase()===x.name.toLowerCase()}">${esc(x.name)}</button>`).join("")}</div>`:""}</div>
-    ${t==="Spent" && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee?`<div class="field"><label for="fee">Bank fee (saved as its own entry)</label><input id="fee" class="num" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(e.feeTxt!=null?e.feeTxt:(cardFee(parseAmount(e.amount))||""))}"><p class="small muted" style="margin-top:4px">Worked out as 1% + Rs 100 + Rs 16 tax. If your bank charged something else, change it. Clear it if there was no fee.</p></div>`:""}
+    ${t==="Spent" && feeRule().on && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee?`<div class="field"><label for="fee">Bank fee (saved as its own entry)</label><input id="fee" class="num" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(e.feeTxt!=null?e.feeTxt:(cardFee(parseAmount(e.amount))||""))}"><p class="small muted" style="margin-top:4px">Worked out as ${esc(feeText())}. If your bank charged something else, change it. Clear it if there was no fee.</p></div>`:""}
     ${t==="Spent"||t==="Received"?`<button type="button" class="chip passchip" data-pass="1" aria-pressed="${!!e.pass}">${e.pass?"✓ ":""}Not my money (just passing through)</button>${e.pass?`<p class="note" style="margin-top:-6px">Changes your ${esc(wallet(e.from||({Spent:S.defaults.spent,Received:S.defaults.received}[t])))} balance, but isn't counted as your income or spending.</p>`:""}`:""}
     <div class="field"><label for="date">Date</label><input type="date" id="date" value="${esc(e.date)}"></div>
     <button class="primary" id="saveBtn">${sheet.editing?"Save changes":"Save"}</button>
@@ -1378,7 +1385,7 @@ async function saveSheet(){
   const to = t==="Car" ? (e.to||S.goal.account) : t==="Moved" ? e.to : "";
   if(t==="Moved" && (!from||!to)){ err.textContent="Pick both From and To"; return; }
   if((t==="Moved"||(t==="Car" && amt>0)) && from===to){ err.textContent="From and To can't be the same account"; return; }
-  let fee=0; if(t==="Spent" && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee && String(e.feeNow||"").trim()){ fee=parseAmount(e.feeNow); if(!isFinite(fee)||fee<0){ err.textContent="Type the bank fee, like 127, or clear it"; return; } }
+  let fee=0; if(t==="Spent" && feeRule().on && (e.cats||[]).some(feeCat) && !sheet.editing && !e.nofee && String(e.feeNow||"").trim()){ fee=parseAmount(e.feeNow); if(!isFinite(fee)||fee<0){ err.textContent="Type the bank fee, like 127, or clear it"; return; } }
   const cl=t==="Spent"?((e.cats||[]).length?e.cats.slice():["Other"]):[];
   const doc={type:t, amount:amt, date:e.date||todayStr(), goal:t==="Car"?(e.goal||"car"):"", pass:(t==="Spent"||t==="Received")&&!!e.pass, cat:t==="Spent"?cl[0]:"", cats:t==="Spent"&&cl.length>1?cl:[], bill:t==="Spent"?(e.bill||""):"", src:t==="Received"?(e.src||""):"", from, to:to||"", note:String(e.note||"").trim(),
     before: !!(sheet.editing && e.before), created: sheet.editing ? (e.created||Date.now()) : Date.now()};
@@ -1410,6 +1417,7 @@ async function saveSettings(ev){
   const R=x=>ren[x]||x;
   N.defaults={spent:R(v("d-spent")),received:R(v("d-received")),saveFrom:R(v("d-saveFrom")),saveTo:R(v("g-account"))};
   N.goal={name:v("g-name")||"Goal", price:num("g-price"), already:num("g-already"), target:v("g-target"), account:R(v("g-account"))};
+  N.fee={on:!!(document.getElementById("fee-on")||{}).checked, pct:num("fee-pct"), fixed:num("fee-fixed")};
   N.noGoal=!!S.noGoal && !N.goal.price && !N.goal.already && N.goal.name===(S.goal.name||"Goal");
   const billRen={}; S.bills.forEach((b,i)=>{ const n=v("b-n-"+i); if(b.name && n && n!==b.name) billRen[b.name]=n; });
   N.bills=S.bills.map((b,i)=>({name:v("b-n-"+i), amount:num("b-a-"+i), day:parseInt(v("b-d-"+i))||"", cat:v("b-c-"+i), word:v("b-w-"+i)})).filter(b=>b.name);
