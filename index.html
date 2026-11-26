@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.15 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.16 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -357,6 +357,8 @@ input,select,#vtext{border:0;background:var(--surface);border-radius:10px;font-f
 .mchart text.val{fill:var(--ink);font-weight:600;font-size:12px}
 .mchart text.mcur{fill:var(--ink);font-weight:600}
 .passchip{align-self:flex-start}
+.glab{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:6px 4px -4px}
+.backbtn{align-self:flex-start;padding:4px 0;font-size:17px}
 .eyebtn{width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .eyebtn svg{width:17px;height:17px}
 .brand{display:flex;align-items:center;gap:10px}
@@ -776,13 +778,14 @@ function monthsBetween(a,b){ const [y1,m1,d1]=a.split("-").map(Number), [y2,m2,d
 
 /* ---------- rendering ---------- */
 const ICON={
-  home:'<svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
+  home:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg>',
+  people:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.8-3.2 3.2-5 6-5s5.2 1.8 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.4 0 4.3 1.4 5 4"/></svg>',
   month:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
   car:'<svg viewBox="0 0 24 24"><path d="M5 16V12l2-5h10l2 5v4M5 16h14M5 16v2M19 16v2"/><circle cx="8" cy="13.5" r="1"/><circle cx="16" cy="13.5" r="1"/></svg>',
   settings:'<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>'
 };
 function renderTabs(){
-  const T=[["home","Home"],["month","Month"],["car",S.goal.name||"Goal"],["settings","Settings"]];
+  const T=[["home","Home"],["month","Month"],["people","People"],["settings","Settings"]];
   document.getElementById("tabs").innerHTML=T.map(([k,l])=> k==="+" ? `<button class="tab plus" data-add="Spent" aria-label="Add an entry"><span aria-hidden="true">+</span></button>`
     : `<button class="tab" data-tab="${k}" ${tab===k?'aria-current="page"':""}>${ICON[k]}${esc(l)}</button>`).join("");
 }
@@ -802,7 +805,7 @@ function render(){
     if(!(faceId()&&canFace())) setTimeout(()=>{ const p=document.getElementById("pinIn"); if(p) p.focus(); },60);
     return;
   }
-  app.innerHTML = tab==="month"?viewMonth(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
+  app.innerHTML = tab==="month"?viewMonth(): tab==="people"?viewPeople(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
 }
 function entryRow(e){
   if(e.type==="Lent"||e.type==="Borrowed"){ const a=+e.amount||0, w=e.who||"Someone", out=(e.type==="Lent")===(a>0);
@@ -857,18 +860,8 @@ function viewHome(){
   <button class="voicebtn" data-voice="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak or paste</button>
   <div class="secthead"><h2>${esc(MON[+k.slice(5,7)-1])}</h2><button class="linkbtn" data-tab="month">See month</button></div>
   <section class="card two"><div><p class="lab">Money in</p><p class="v">${money(sumType(mon,"Received"))}</p></div><div><p class="lab">Money out</p><p class="v">${money(sumType(mon,"Spent"))}</p></div></section>
-  ${S.bills.length?`<section class="card" data-tab="month" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">Bills this month</span>${unpaid.length?`<span class="small muted">${unpaidSum?rs(unpaidSum):""}${unpaidVar?(unpaidSum?" + ":"")+"bills that change":""}</span>`:""}</span>${unpaid.length?`<span class="pill p-due">${unpaid.length} to pay</span>`:`<span class="pill p-ok">All paid</span>`}</div></section>`:""}
-  ${(()=>{ const P=people().filter(x=>Math.abs(x.net)>=0.5);
-    const owed=P.filter(x=>x.net>0).reduce((s,x)=>s+x.net,0), owe=P.filter(x=>x.net<0).reduce((s,x)=>s-x.net,0);
-    const last=n=>{ const l=sorted(E.filter(e=>(e.type==="Lent"||e.type==="Borrowed") && (e.who||"").trim().toLowerCase()===n.toLowerCase())); return l[0]; };
-    return `<div class="secthead"><h2>People</h2><button class="linkbtn" data-add="People">+ Add</button></div>
-    <section class="card two"><div><p class="lab">I owe</p><p class="v">${hid(owe)}</p></div><div><p class="lab">Owed to me</p><p class="v c-in">${hid(owed)}</p></div></section>
-    ${P.length?`<section class="card group"><div class="list">${P.map(x=>{ const l=last(x.name); const wasLend=l&&l.type==="Lent";
-      return `<div class="item" style="cursor:default"><span class="dot av" aria-hidden="true">${esc((x.name.trim()[0]||"?").toUpperCase())}</span><span class="txt"><span class="t1">${esc(x.name)}</span><span class="t2">${x.net>0?"I lent":"I borrowed"}${l?" · "+esc(shortDate(l.date)):""}</span></span><span class="pamt ${x.net>0?"c-in":""}">${hid(Math.abs(x.net))}<span>${x.net>0?"owes me":"I owe"}</span></span><button class="paybtn" data-payback="${esc(x.name)}">${x.net>0?"Got it":"Pay back"}</button></div>`; }).join("")}</div></section>`:`<p class="note">No one owes you, and you owe no one. Tap + Add when you lend or borrow money. It won't change what your cards show as spending.</p>`}`; })()}
-  ${(()=>{ const c=checkCat(); if(!c) return ""; const l=E.filter(e=>e.type==="Spent" && hasCat(e,c)); if(!l.length) return "";
-    return `<section class="card" data-checklater="1" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
-  <div class="secthead"><h2>Latest</h2>${E.length>8?`<button class="linkbtn" data-tab="month">See all</button>`:""}</div>
-  <section class="card group">${E.length?`<div class="list">${sorted(E).slice(0,8).map(entryRow).join("")}</div>`:`<p class="empty">Nothing added yet. Tap + at the top to add your first entry.</p>`}</section>
+  <div class="secthead"><h2>Latest</h2>${E.length>5?`<button class="linkbtn" data-tab="month">See all</button>`:""}</div>
+  <section class="card group">${E.length?`<div class="list">${sorted(E).slice(0,5).map(entryRow).join("")}</div>`:`<p class="empty">Nothing added yet. Tap + at the top to add your first entry.</p>`}</section>
   <p class="note">Tap any entry to change or delete it.</p>`;
 }
 function viewMonth(){
@@ -896,6 +889,8 @@ function viewMonth(){
     <div class="card soft-in"><p class="lab">Money in</p><p class="val num c-in">${rs(inn)}</p></div>
     <div class="card soft-out"><p class="lab">Money out</p><p class="val num c-out">${rs(out)}</p></div>
   </div>
+  ${(()=>{ const c=checkCat(); if(!c) return ""; const l=E.filter(e=>e.type==="Spent" && hasCat(e,c)); if(!l.length) return "";
+    return `<section class="card" data-checklater="1" style="cursor:pointer"><div class="row"><span><span style="display:block;font-weight:500;font-size:16px">To check later</span><span class="small muted">${l.length} entr${l.length===1?"y":"ies"} · ${rs(l.reduce((s,e)=>s+(+e.amount||0),0))}. Tap one and pick the right category once you know.</span></span><span class="pill p-due">${l.length}</span></div></section>`; })()}
   ${chart}
   <div class="card" style="background:var(--car-soft)"><div class="row"><p class="lab" style="color:var(--ink)">Saved for ${esc((S.goal.name||"goal").toLowerCase())} this month</p><p class="val num c-car" style="margin:0">${rs(sv)}</p></div></div>
   ${(()=>{ const r=mon.filter(e=>e.type==="Received" && !e.pass); if(!r.length) return ""; const g={}; r.forEach(e=>{ const k=e.src||"Not set"; g[k]=(g[k]||0)+(+e.amount||0); });
@@ -921,6 +916,24 @@ function searchHTML(q){
   const out=sumType(res,"Spent"), inn=sumType(res,"Received");
   return `<p class="note" style="margin:2px 2px 8px">${res.length} entr${res.length===1?"y":"ies"}${out?" · out "+rs(out):""}${inn?" · in "+rs(inn):""}</p><section class="card group"><div class="list">${res.slice(0,150).map(entryRow).join("")}</div></section>${res.length>150?`<p class="note">Showing the latest 150. Add more words to narrow it down.</p>`:""}`;
 }
+let openPerson="";
+function viewPeople(){
+  const all=people(), key=x=>x.name.trim().toLowerCase();
+  const owe=all.filter(x=>x.net<=-0.5), owed=all.filter(x=>x.net>=0.5), done=all.filter(x=>Math.abs(x.net)<0.5);
+  const tot=l=>l.reduce((s,x)=>s+Math.abs(x.net),0);
+  const hist=n=>sorted(E.filter(e=>(e.type==="Lent"||e.type==="Borrowed") && (e.who||"").trim().toLowerCase()===n));
+  const row=x=>{ const h=hist(key(x)), l=h[0], open=openPerson===key(x);
+    const what=!l?"":l.type==="Lent"?(+l.amount>0?"I lent":"Paid back to me"):(+l.amount>0?"I borrowed":"I paid back");
+    return `<div class="item" data-person="${esc(key(x))}" style="cursor:pointer"><span class="dot av" aria-hidden="true">${esc((x.name.trim()[0]||"?").toUpperCase())}</span><span class="txt"><span class="t1">${esc(x.name)}</span><span class="t2">${esc(what)}${l?" · "+esc(shortDate(l.date)):""}</span></span><span class="pamt ${x.net>0?"c-in":Math.abs(x.net)<0.5?"muted":""}">${rs(Math.abs(x.net)).replace("Rs ","")}</span>${Math.abs(x.net)>=0.5?`<button class="paybtn" data-payback="${esc(x.name)}">${x.net>0?"Got it":"Pay back"}</button>`:""}</div>
+    ${open?`<div class="catlist"><p class="small muted">${h.length} entr${h.length===1?"y":"ies"} with ${esc(x.name)}</p><div class="list">${h.map(entryRow).join("")}</div></div>`:""}`; };
+  const grp=(t,l)=>l.length?`<p class="glab">${t}</p><section class="card group"><div class="list">${l.map(row).join("")}</div></section>`:"";
+  return `
+  <div class="htop"><h1>People</h1><button class="plusbtn" data-add="People" aria-label="Lend or borrow">+</button></div>
+  <p class="hdate">Money you lent or borrowed. It never changes your spending.</p>
+  <section class="card two"><div><p class="lab">I owe</p><p class="v">${rs(tot(owe)).replace("Rs ","")}</p></div><div><p class="lab">Owed to me</p><p class="v c-in">${rs(tot(owed)).replace("Rs ","")}</p></div></section>
+  ${all.length?grp("I owe",owe)+grp("Owed to me",owed)+grp("Settled",done)+`<p class="note">Tap a person to see every lend and pay-back with them.</p>`
+    :`<p class="empty">No one owes you, and you owe no one. Tap + when you lend or borrow money.</p>`}`;
+}
 function viewCar(){
   const cf=carFund(), price=+S.goal.price||0, need=Math.max(0,price-cf), pct=price?Math.min(100,cf/price*100):0;
   const today=todayStr(), y=+today.slice(0,4);
@@ -932,6 +945,7 @@ function viewCar(){
   let tgt="";
   if(S.goal.target){ const m=monthsBetween(today,S.goal.target); tgt = m>0?`<div class="row"><span>To reach it by ${shortDate(S.goal.target)} ${S.goal.target.slice(0,4)}</span><b class="num">${rs(need/m)}/mo</b></div>`:`<p class="note">Your target date has passed. Set a new one in Settings.</p>`; }
   return `
+  <button class="linkbtn backbtn" data-tab="home">‹ Home</button>
   <section class="card hero carhero"><p class="lab">${esc(S.goal.name||"Goal")} fund · kept in ${esc(S.goal.account)}</p>
     <p class="big num" style="color:var(--car)">${rs(cf)}</p>
     <p class="grownote" style="margin-top:4px">${esc(growNote(pct))}</p>
@@ -1246,8 +1260,9 @@ function toast(t){ const h=document.getElementById("toastHost"); h.innerHTML=`<d
 
 /* ---------- events ---------- */
 document.addEventListener("click", ev=>{
-  const t=ev.target.closest("[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
+  const t=ev.target.closest("[data-person],[data-mjump],[data-pass],#eyeBtn,[data-card],#faceBtn,#faceOn,#faceOff,[data-src],[data-rname],[data-checklater],[data-voice],[data-vlang],[data-vdel],[data-vedit],#vMic,#vPaste,#vRead,#vSave,#vClose,#vBg,[data-snap],[data-act],[data-who],[data-payback],[data-setup],[data-opencat],[data-bill],[data-tab],[data-add],[data-pay],[data-edit],[data-mon],[data-k],[data-cat],[data-from],[data-to],[data-delbill],[data-delcat],#closeSheet,#saveBtn,#delBtn,#addBill,#dlx,#dlb,#sheetBg");
   if(!t) return;
+  if(t.dataset.person!==undefined){ if(ev.target.closest("[data-payback]")) {} else { openPerson=openPerson===t.dataset.person?"":t.dataset.person; render(); return; } }
   if(t.dataset.mjump){ monthKey=t.dataset.mjump; render(); return; }
   if(t.dataset.pass){ readSheetInputs(); sheet.e.pass=!sheet.e.pass; drawSheet(); return; }
   if(t.id==="eyeBtn"){ showAmt=!showAmt; render(); return; }
