@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kifaya">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-180.png">
 <style>body{margin:0}</style>
-<script>window.__PHONE__=true; window.__BUILD__="1.27 (26 Nov 2026)";
+<script>window.__PHONE__=true; window.__BUILD__="1.28 (26 Nov 2026)";
 (function(){
  var KEY="mm.store", store={}, L=[];
  try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ store={}; }
@@ -420,7 +420,9 @@ body{overflow-x:clip} /* clip, not hidden, so sticky bars keep working */
 .pamt span{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .paybtn{background:var(--bg);border:0;color:var(--ink);font-weight:600;font-size:13px;padding:7px 12px}
 .savebar{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.18)}
-.updbar{position:fixed;left:16px;right:16px;top:calc(10px + env(safe-area-inset-top,0px));z-index:70;max-width:520px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:14px;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 18px;font:500 15px var(--font);box-shadow:0 10px 30px rgba(0,0,0,.25);animation:hmIn .2s ease-out}
+.updbar{position:fixed;left:16px;right:16px;bottom:calc(82px + env(safe-area-inset-bottom,0px));z-index:70;max-width:520px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:14px;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 18px;font:500 15px var(--font);box-shadow:0 10px 30px rgba(0,0,0,.25);animation:hmIn .2s ease-out}
+body:has(.updbar) .toast{bottom:calc(146px + env(safe-area-inset-bottom,0px))}
+.updbar .later{opacity:.7;font-weight:500}
 .updbar button{background:none;border:0;color:inherit;font:600 15px var(--font);height:40px;padding:0 14px;border-radius:10px;cursor:pointer}
 .lockw{min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 30px;text-align:center;cursor:default}
 .lockw .lk{width:76px;height:76px;color:var(--car)}
@@ -905,6 +907,7 @@ function render(){
   if(!ready.profile||!ready.entries){ app.innerHTML=`<div class="card empty">Loading your money…</div>`; return; }
   if(PHONE && fresh && !E.length){ document.getElementById("tabs").innerHTML=""; app.innerHTML=viewSetup(); return; }
   if(S.pinHash && unlocked!==S.pinHash){
+    { const bb=document.getElementById("bkBar"); if(bb) bb.remove(); }
     document.getElementById("tabs").innerHTML="";
     const face=faceId()&&canFace();
     const KAF=`<svg class="lk" viewBox="0 0 100 100" aria-hidden="true"><path d="M78 18v50a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12v-8" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 38c0 0-10 11-10 18a10 10 0 0 0 20 0c0-7-10-18-10-18z" fill="#B49A78"/></svg>`;
@@ -923,6 +926,7 @@ function render(){
     return;
   }
   app.innerHTML = tab==="month"?viewMonth(): tab==="people"?viewPeople(): tab==="car"?viewCar(): tab==="settings"?viewSettings(): viewHome();
+  setTimeout(backupBar,0);
 }
 function entryRow(e){
   if(e.type==="Lent"||e.type==="Borrowed"){ const a=+e.amount||0, w=e.who||"Someone", out=(e.type==="Lent")===(a>0);
@@ -1236,7 +1240,7 @@ if(PHONE && "serviceWorker" in navigator){
   const hadCtl=!!navigator.serviceWorker.controller; let shown=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hadCtl||shown) return; shown=true;
     const d=document.createElement("div"); d.className="updbar"; d.id="updBar"; d.setAttribute("role","status");
-    d.innerHTML='<span>New version of Kifaya</span><button type="button" id="updBtn">Refresh</button>'; document.body.appendChild(d);
+    d.innerHTML='<span>New version of Kifaya</span><button type="button" id="updBtn">Refresh</button>'; document.body.appendChild(d); { const bb=document.getElementById("bkBar"); if(bb) bb.remove(); }
     document.getElementById("updBtn").addEventListener("click",()=>{ location.reload(); }); });
   const look=()=>{ navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.update(); }).catch(()=>{}); };
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) look(); });
@@ -1320,6 +1324,25 @@ async function restoreSnap(key){ let o=null; try{ o=JSON.parse(localStorage.getI
   if(!o){ toast("That copy couldn't be read."); return; }
   if(!confirm("Go back to your money as it was on "+shortDate(key.slice(8))+"? Entries added after that will be removed.")) return;
   try{ await window.__restore(o); toast("Restored the copy from "+shortDate(key.slice(8))); setTimeout(render,60); }catch(x){ toast(writeError(x)); } }
+/* backup reminder inside the app: 7 days after starting if never backed up, then every 30 days; "Later" waits 7 days */
+function backupDue(){
+  if(!PHONE || !E.length) return false;
+  let snooze=""; try{ snooze=localStorage.getItem("mm.bkSnooze")||""; }catch(e){}
+  if(snooze && snooze>todayStr()) return false;
+  const last=lastBackup(), first=E.reduce((m,e)=>Math.min(m,+e.created||Date.now()),Date.now());
+  const base=last?new Date(last+"T00:00:00").getTime():first, days=(Date.now()-base)/864e5;
+  return days >= (last?30:7);
+}
+function backupBar(){
+  const old=document.getElementById("bkBar");
+  const want=tab==="home" && !sheet && !(S.pinHash && unlocked!==S.pinHash) && !document.getElementById("updBar") && backupDue();
+  if(!want){ if(old) old.remove(); return; } if(old) return;
+  const d=document.createElement("div"); d.className="updbar"; d.id="bkBar"; d.setAttribute("role","status");
+  d.innerHTML='<span>Time to back up</span><span><button type="button" class="later" id="bkLater">Later</button><button type="button" id="bkNow">Back up</button></span>';
+  document.body.appendChild(d);
+  document.getElementById("bkNow").addEventListener("click",async()=>{ await downloadBackup(); backupBar(); });
+  document.getElementById("bkLater").addEventListener("click",()=>{ const t=new Date(Date.now()+7*864e5); try{ localStorage.setItem("mm.bkSnooze", t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate())); }catch(e){} backupBar(); });
+}
 function lastBackup(){ try{ return localStorage.getItem("mm.lastBackup")||""; }catch(e){ return ""; } }
 async function downloadBackup(){
   if(!downloads){ toast("Downloads aren't available here."); return; }
@@ -1349,6 +1372,7 @@ function openSheet(kind, entry){
   drawSheet();
 }
 function drawSheet(){
+  setTimeout(backupBar,0);
   const host=document.getElementById("sheetHost");
   if(!sheet){ host.innerHTML=""; return; }
   const e=sheet.e, t=e.type, names=acctNames();
